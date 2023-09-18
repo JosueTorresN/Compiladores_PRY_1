@@ -12,12 +12,12 @@ import jflex.exceptions.SilentExit;
 public class Principal {
     public static void main(String[] args) {
 //        String ruta = System.getProperty("user.dir") + "/src/source/Lexer.flex";
-        String ruta = "D:\\Universidad\\compiladores\\Compiladores_PRY_1\\src\\main\\java\\source\\Lexer.jflex";
+        String ruta = "D:\\Universidad\\compiladores\\Compiladores_PRY_1\\src\\main\\java\\flex\\Lexer.jflex";
         System.out.println(ruta);
         try{
-        String[] archivo = {ruta};
-        jflex.Main.generate(archivo);
-//        generarLexer(ruta);
+//        String[] archivo = {ruta};
+//        jflex.Main.generate(archivo);
+        generarLexer(ruta);
         } catch (SilentExit e) {
             System.out.println(e.getMessage());
         }
