@@ -298,7 +298,7 @@ class LexerCup implements java_cup.runtime.Scanner {
   private int zzLexicalState = YYINITIAL;
 
   /**
-   * This buffer contains the current text to be matched and is the source of the {@link #yytext()}
+   * This buffer contains the current text to be matched and is the source of the {@link #yy  text()}
    * string.
    */
   private char zzBuffer[] = new char[Math.min(ZZ_BUFFERSIZE, zzMaxBufferLen())];
