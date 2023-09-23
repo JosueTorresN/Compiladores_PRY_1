@@ -1,0 +1,80 @@
+package source;
+
+import java_cup.runtime.*;
+
+parser code {:
+
+    // Connect this parser to a scanner!
+
+    LexerCup lex;
+
+ 
+
+    @SuppressWarnings("deprecation")
+
+    public Sintax(LexerCup lex){
+
+        this.lex=lex;
+
+        this.symbolFactory = new DefaultSymbolFactory();
+
+    }
+
+ 
+
+:}
+
+ 
+
+init with {: :};
+
+ 
+
+/* define how to connect to the scanner! */
+
+scan with {: return lex.next_token(); :};
+
+terminal Int, Linea, Comillas, T_dato, Cadena, If, Else, Do, While, For,
+    Igual, Suma, Resta, Multiplicacion, Division, Op_logico, Op_relacional,
+    Op_atribucion, Op_incremento, Op_booleano, Parentesis_a, Parentesis_c,
+    Llave_a, Llave_c, Corchete_a, Corchete_c, Main, P_coma, Identificador, P_dospuntos, Case_, 
+    Switch, Separador, Break, Return, Func, Global, Float,
+    Numero, ERROR;
+
+non terminal INICIO,PROGRAMA, SENTENCIA, DECLARACION, IF, SENTENCIA_BOOLEANA, ELSE,
+WHILE, FOR, SWITCH, CASE, CASE_LIST, READ, WRITE, DECLARACION_FUNCION, LISTA_PARAMETRO, LITERAL,
+FUNCTION_CALL;
+
+start with INICIO;
+
+
+PROGRAMA::= INICIO; 
+
+INICIO ::= 
+    T_dato Separador Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
+    Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c
+;
+SENTENCIA ::= 
+    SENTENCIA DECLARACION |
+    DECLARACION 
+;
+DECLARACION ::= 
+    T_dato Identificador P_coma
+;
+LISTA_PARAMETRO::= 
+    LISTA_PARAMETRO Identificador | 
+    Identificador
+;
+LITERAL::=
+    Cadena | Numero | Op_booleano 
+;
+DECLARACION_FUNCION::=
+    T_dato Separador Func Separador Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
+    T_dato Separador Func Separador Identificador Parentesis_a LISTA_PARAMETRO Parentesis_c Llave_a SENTENCIA Llave_c
+;
+FUNCTION_CALL::=
+    Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
+    Parentesis_a Parentesis_c Llave_a Llave_c
+;
+DECLARACION_ASIGNACION::=
+    T_dato Identificador Igual (Identificador | LITERAL | FUNCTION_CALL) P_coma;
