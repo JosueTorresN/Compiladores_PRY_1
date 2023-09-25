@@ -39,11 +39,11 @@ terminal Int, Linea, Comillas, T_dato, Cadena, If, Else, Do, While, For,
     Op_atribucion, Op_incremento, Op_booleano, Parentesis_a, Parentesis_c,
     Llave_a, Llave_c, Corchete_a, Corchete_c, Main, P_coma, Identificador, P_dospuntos, Case_, 
     Switch, Separador, Break, Return, Func, Global, Float,
-    Numero, ERROR;
+    Numero, ERROR, Coma;
 
 non terminal INICIO,PROGRAMA, SENTENCIA, DECLARACION, IF, SENTENCIA_BOOLEANA, ELSE,
 WHILE, FOR, SWITCH, CASE, CASE_LIST, READ, WRITE, DECLARACION_FUNCION, LISTA_PARAMETRO, LITERAL,
-FUNCTION_CALL;
+FUNCTION_CALL, ASIGNACION;
 
 start with INICIO;
 
@@ -63,7 +63,7 @@ DECLARACION ::=
 ;
 LISTA_PARAMETRO::= 
     LISTA_PARAMETRO Identificador | 
-    Identificador
+    Identificador | LISTA_PARAMETRO LITERAL | LITERAL
 ;
 LITERAL::=
     Cadena | Numero | Op_booleano 
@@ -73,8 +73,17 @@ DECLARACION_FUNCION::=
     T_dato Separador Func Separador Identificador Parentesis_a LISTA_PARAMETRO Parentesis_c Llave_a SENTENCIA Llave_c
 ;
 FUNCTION_CALL::=
-    Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
-    Parentesis_a Parentesis_c Llave_a Llave_c
+    Identificador Parentesis_a Parentesis_c P_coma|
+    Identificador Parentesis_a SENTENCIA Parentesis_c P_coma
 ;
 DECLARACION_ASIGNACION::=
-    T_dato Identificador Igual (Identificador | LITERAL | FUNCTION_CALL) P_coma;
+    T_dato Identificador Igual (Identificador | LITERAL | FUNCTION_CALL) P_coma
+;
+
+ASIGNACION::=
+    Identificador Igual (Identificador | LITERAL | FUNCTION_CALL) P_coma
+;
+
+If::= If Parentesis_a LISTA_PARAMETRO Parentesis_c Llave_a LISTA_PARAMETRO Llave_c
+
+;
