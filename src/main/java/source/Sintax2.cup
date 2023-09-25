@@ -27,6 +27,7 @@ init with {: :};
 
 scan with {: return lex.next_token(); :};
 
+//Declaraciones terminales
 terminal Int, Linea, Comillas, T_dato, Cadena, If, Else, Do, While, For,
     Igual, Suma, Resta, Multiplicacion, Division, Potencia, Modulo, Op_logico, Op_relacional,
     Op_atribucion, Op_incremento, Op_booleano, Parentesis_a, Parentesis_c,
@@ -34,165 +35,75 @@ terminal Int, Linea, Comillas, T_dato, Cadena, If, Else, Do, While, For,
     Switch, Separador, Break, Return, Func, Global, Float, Caracteres,
     Numero, ERROR;
 
-non terminal LITERAL, FACTOR, EXPRESION, TERM, EXPRESION_REL, EXPRESION_LOGICO, DECLARACION,
-ASIGNACION, DECLARACION_ASIGNACION, VARIABLES, LISTA_PARAMETRO, RETURN, SENTENCIA, LISTA_ELEMENTO,
-BLOQUE, IF, ELSE, BREAK, IF_DECLARACION, WHILE, FOR, CASE, CASE_LISTA, SWITCH, DECLARACION_FUNCION,
-LISTA_FUNCION, FUNCTION_CALL, DECLARACION_GLOBAL, MAIN, PROGRAMA;
+//Declaraciones no terminales 
+non terminal PROGRAMA, SENTENCIA, DECLARACION, IF, SENTENCIA_BOOLEANA, WHILE, FOR, ASIGNACION;
 
+//Precedencias
+//precedence left P_coma;
+precedence left T_dato;
+precedence left Cadena;
+//precedence left Identificador;
+//precedence left Op_incremento;
+precedence left If;
+precedence left While;
 
-precedence left Op_logico;
-precedence left Op_logico, P_coma;
-precedence left Op_logico, Parentesis_c;
-precedence left Op_logico, Parentesis_c, P_coma;
+//Produccion inicial
 start with PROGRAMA;
 
-LITERAL::=
-    Caracteres | Numero | Op_booleano 
+PROGRAMA ::= 
+    Int Separador Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
+    Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c
 ;
 
-FACTOR ::= 
-    LITERAL | Identificador | Parentesis_a EXPRESION Parentesis_c | DECLARACION |
-    FUNCTION_CALL
+
+
+FUNCIONES_DECLARACION ::=
+    Global T_dato Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
+    Func Separador Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c
 ;
-
-EXPRESION ::=
-    TERM | TERM Suma EXPRESION | TERM Resta EXPRESION 
+SENTENCIA ::= 
+    SENTENCIA DECLARACION |
+    DECLARACION |
+    SENTENCIA IF | 
+    IF |
+    //SENTENCIA WHILE |
+    //WHILE |
+    //SENTENCIA FOR |
+    //FOR
 ;
-
-TERM ::=
-    FACTOR | FACTOR Multiplicacion TERM | FACTOR Division TERM | FACTOR Modulo EXPRESION | FACTOR Potencia
-    EXPRESION | Parentesis_a TERM Parentesis_c
-;
-
-EXPRESION_REL ::=
-    Identificador Op_relacional Identificador |
-    Identificador Op_relacional LITERAL |
-    LITERAL Op_relacional Identificador |
-    LITERAL Op_relacional LITERAL |
-    Identificador Op_relacional FUNCTION_CALL |
-    FUNCTION_CALL Op_relacional Identificador |
-    FUNCTION_CALL Op_relacional LITERAL |
-    LITERAL Op_relacional FUNCTION_CALL |
-    FUNCTION_CALL Op_relacional FUNCTION_CALL |
-    LITERAL Op_relacional EXPRESION_REL |
-;
-
-EXPRESION_LOGICO ::=
-
-    | EXPRESION_LOGICO Op_logico EXPRESION_LOGICO
-    | EXPRESION_LOGICO Op_logico LITERAL
-    | LITERAL Op_logico EXPRESION_LOGICO
-    | LITERAL Op_logico LITERAL
-    | EXPRESION_LOGICO Op_logico FUNCTION_CALL
-    | FUNCTION_CALL Op_logico EXPRESION_LOGICO
-    | FUNCTION_CALL Op_logico FUNCTION_CALL
-    | Parentesis_a EXPRESION_LOGICO Parentesis_c
-    | EXPRESION_REL;
 
 DECLARACION ::= 
-    T_dato Separador Identificador P_coma
+    T_dato Identificador P_coma | 
+    T_dato Identificador Op_atribucion Numero P_coma |
+    T_dato Identificador Igual Numero P_coma |
+    T_dato Identificador Op_incremento P_coma | 
+    T_dato Op_incremento Identificador P_coma | 
+    Cadena Identificador Op_atribucion Comillas Comillas P_coma |
+    Cadena Identificador Igual Comillas Comillas P_coma |
+    Cadena Identificador Op_atribucion Comillas Identificador Comillas P_coma |
+    Cadena Identificador Igual Comillas Identificador Comillas P_coma
 ;
 
-ASIGNACION ::= 
-    Identificador Op_atribucion Identificador P_coma |
-    Identificador Op_atribucion LITERAL P_coma |
-    Identificador Op_atribucion FUNCTION_CALL P_coma |
-    Identificador Op_atribucion EXPRESION_LOGICO P_coma |
-    Identificador Op_atribucion EXPRESION P_coma
+IF ::= If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c
 ;
-
-DECLARACION_ASIGNACION ::=
-    T_dato Separador Identificador Igual Identificador P_coma |
-    T_dato Separador Identificador Igual LITERAL P_coma |
-    T_dato Separador Identificador Igual FUNCTION_CALL P_coma |
-    T_dato Separador Identificador Igual EXPRESION_LOGICO P_coma |
-    T_dato Separador Identificador Igual EXPRESION P_coma
+SENTENCIA_BOOLEANA ::= 
+    Op_booleano | 
+    Identificador Op_relacional Op_booleano |
+    Identificador Op_relacional Numero |
+    Identificador Op_relacional Identificador |
+    Identificador Op_relacional Comillas Comillas |
+    Identificador Op_relacional Comillas Identificador Comillas
 ;
-
-VARIABLES ::=
-    DECLARACION | DECLARACION_ASIGNACION | ASIGNACION
-;
-
-LISTA_PARAMETRO ::= 
-    Identificador | LITERAL | Identificador LISTA_PARAMETRO | LITERAL LISTA_PARAMETRO
-;
-RETURN ::= 
-    Return Separador LITERAL P_coma
-;
-
-SENTENCIA ::=
-    VARIABLES | IF_DECLARACION | WHILE | FOR | EXPRESION P_coma | EXPRESION_LOGICO P_coma | SWITCH | FUNCTION_CALL
-| RETURN
-;
-
-LISTA_ELEMENTO ::=
-    SENTENCIA | SENTENCIA LISTA_ELEMENTO
-;
-
-BLOQUE ::=
-    Llave_a LISTA_ELEMENTO Llave_c
-;
-
-IF ::= 
-    If Parentesis_a EXPRESION_LOGICO Parentesis_c BLOQUE
-;
-
-ELSE ::=
-    Else BLOQUE
-;
-
-IF_DECLARACION ::=
-    IF ELSE | IF IF_DECLARACION | IF
-;
-
-WHILE ::=
-    While Parentesis_a EXPRESION_LOGICO Parentesis_c BLOQUE
+WHILE ::= While Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c
 ;
 
 FOR ::=
-    For Parentesis_a VARIABLES P_coma EXPRESION_LOGICO P_coma ASIGNACION Parentesis_c BLOQUE
+    For Parentesis_a Numero P_coma SENTENCIA_BOOLEANA P_coma ASIGNACION P_coma Parentesis_c Llave_a SENTENCIA Llave_c
 ;
 
-CASE ::=
-    Case_ LITERAL P_dospuntos LISTA_ELEMENTO
+ASIGNACION::=
+    Identificador Igual Numero | 
+    Identificador Op_incremento |
+    Op_incremento Identificador 
 ;
 
-BREAK ::=
-    Break P_coma
-;
-
-CASE_LISTA ::=
-    CASE CASE_LISTA |
-    CASE
-;
-
-SWITCH ::=
-    Switch Parentesis_a Identificador Parentesis_c Llave_a CASE_LISTA  BREAK Llave_c
-;
-
-DECLARACION_FUNCION ::=
-    T_dato Separador Func Separador Identificador Parentesis_a LISTA_PARAMETRO Parentesis_c BLOQUE |
-    T_dato Separador Func Separador Identificador Parentesis_a  Parentesis_c BLOQUE
-;
-
-LISTA_FUNCION ::=
-    DECLARACION_FUNCION | DECLARACION_FUNCION LISTA_FUNCION
-;
-
-FUNCTION_CALL ::=
-    Identificador Parentesis_a LISTA_PARAMETRO Parentesis_c |
-    Identificador Parentesis_a Parentesis_c
-;
-
-DECLARACION_GLOBAL ::=
-    Global Separador T_dato Separador Identificador P_coma |
-    Global Separador T_dato Separador Identificador Igual LITERAL P_coma
-;
-
-MAIN ::=
-    T_dato Separador Func Separador Main Parentesis_a Parentesis_c BLOQUE
-;
-
-PROGRAMA ::=
-    MAIN LISTA_FUNCION | MAIN | DECLARACION_GLOBAL MAIN LISTA_FUNCION | DECLARACION_GLOBAL MAIN
-;
