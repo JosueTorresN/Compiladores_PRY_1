@@ -32,44 +32,68 @@ terminal Int, Linea, Comillas, T_dato, Cadena, If, Else, Do, While, For,
     Igual, Suma, Resta, Multiplicacion, Division, Potencia, Modulo, Op_logico, Op_relacional,
     Op_atribucion, Op_incremento, Op_booleano, Parentesis_a, Parentesis_c,
     Llave_a, Llave_c, Corchete_a, Corchete_c, Main, P_coma, Identificador, P_dospuntos, Case_, 
-    Switch, Separador, Break, Return, Func, Global, Float, Caracteres,
+    Switch, Separador, Break, Return, Func, Global, Float, Caracteres, Coma, Default,
     Numero, ERROR;
 
 //Declaraciones no terminales 
-non terminal PROGRAMA, SENTENCIA, DECLARACION, IF, SENTENCIA_BOOLEANA, WHILE, FOR, ASIGNACION;
+non terminal PROGRAMA, SENTENCIA, DECLARACION, IF, SENTENCIA_BOOLEANA, WHILE, FOR, ASIGNACION, FUNCIONES_DECLARACION, PARAMETRO, PARAMETROS, DECLARACIOON_SWITCH, CASE, CASE_LIST, FUNCTION_CALL;
 
 //Precedencias
 //precedence left P_coma;
 precedence left T_dato;
 precedence left Cadena;
-//precedence left Identificador;
-//precedence left Op_incremento;
 precedence left If;
 precedence left While;
-
+precedence left PARAMETROS, Parentesis_c; //Esta precedencia es utilizada para eliminar los problemas al escoger entre la lista de parametros de una funcion y el parentesis de cierre. ejemplo : f(a,b,c){}->el contenido a,b,c estaba entrando en conflicto con el parentesis decierre antes del precedence. 
 //Produccion inicial
 start with PROGRAMA;
 
 PROGRAMA ::= 
     Int Separador Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
-    Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c
+    Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c | FUNCIONES_DECLARACION
 ;
-
-
 
 FUNCIONES_DECLARACION ::=
     Global T_dato Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
-    Func Separador Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c
+    Func Separador Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
+    Func Separador Identificador Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c
 ;
+
+PARAMETRO::= T_dato Identificador
+;
+
+PARAMETROS::= PARAMETROS Coma PARAMETRO 
+    |
+;
+
 SENTENCIA ::= 
     SENTENCIA DECLARACION |
     DECLARACION |
     SENTENCIA IF | 
     IF |
-    //SENTENCIA WHILE |
-    //WHILE |
-    //SENTENCIA FOR |
-    //FOR
+    SENTENCIA WHILE |
+    WHILE |
+    SENTENCIA FOR |
+    FOR |
+    SENTENCIA DECLARACIOON_SWITCH |
+    DECLARACIOON_SWITCH |
+    SENTENCIA FUNCTION_CALL |
+    FUNCTION_CALL
+;
+
+DECLARACIOON_SWITCH ::= Switch Parentesis_a Identificador Parentesis_c Llave_a CASE_LIST Llave_c
+;
+
+CASE ::= Case_ Identificador P_dospuntos SENTENCIA
+      | Default P_dospuntos SENTENCIA
+;
+CASE_LIST ::= CASE CASE_LIST
+                | CASE
+;
+
+FUNCTION_CALL::=
+    Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
+    Identificador Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c
 ;
 
 DECLARACION ::= 
@@ -81,7 +105,8 @@ DECLARACION ::=
     Cadena Identificador Op_atribucion Comillas Comillas P_coma |
     Cadena Identificador Igual Comillas Comillas P_coma |
     Cadena Identificador Op_atribucion Comillas Identificador Comillas P_coma |
-    Cadena Identificador Igual Comillas Identificador Comillas P_coma
+    Cadena Identificador Igual Comillas Identificador Comillas P_coma |
+    T_dato Identificador Igual FUNCTION_CALL P_coma
 ;
 
 IF ::= If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c
