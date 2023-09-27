@@ -4,7 +4,6 @@ import java_cup.runtime.*;
 
 parser code {:
 
-
     // Connect this parser to a scanner!
 
     LexerCup lex;
@@ -34,10 +33,12 @@ terminal Int, Linea, Comillas, T_dato, Cadena, If, Else, Do, While, For,
     Op_atribucion, Op_incremento, Op_booleano, Parentesis_a, Parentesis_c,
     Llave_a, Llave_c, Corchete_a, Corchete_c, Main, P_coma, Identificador, P_dospuntos, Case_, 
     Switch, Separador, Break, Return, Func, Global, Float, Caracteres, Coma, Default,
-    Numero, ERROR;
+    Numero, Read, Write,ERROR;
 
 //Declaraciones no terminales 
-non terminal PROGRAMA, SENTENCIA, DECLARACION, IF, SENTENCIA_BOOLEANA, WHILE, FOR, ASIGNACION, FUNCIONES_DECLARACION, PARAMETRO, PARAMETROS, DECLARACIOON_SWITCH, CASE, CASE_LIST, FUNCTION_CALL;
+non terminal PROGRAMA, SENTENCIA, DECLARACION, IF, SENTENCIA_BOOLEANA, WHILE, FOR, ASIGNACION, FUNCIONES_DECLARACION, PARAMETRO, PARAMETROS, DECLARACIOON_SWITCH, CASE, CASE_LIST, FUNCTION_CALL, OPERACION_ARIT,
+GLOBALES, MAIN
+;
 
 //Precedencias
 //precedence left P_coma;
@@ -46,18 +47,23 @@ precedence left Cadena;
 precedence left If;
 precedence left While;
 precedence left PARAMETROS, Parentesis_c; //Esta precedencia es utilizada para eliminar los problemas al escoger entre la lista de parametros de una funcion y el parentesis de cierre. ejemplo : f(a,b,c){}->el contenido a,b,c estaba entrando en conflicto con el parentesis decierre antes del precedence. 
+precedence left OPERACION_ARIT, Suma, Resta, Multiplicacion, Division, Potencia, Modulo;
+precedence left FUNCIONES_DECLARACION, Func;
 //Produccion inicial
 start with PROGRAMA;
 
 PROGRAMA ::= 
+    GLOBALES MAIN FUNCIONES_DECLARACION 
+;
+MAIN::=
     Int Separador Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
-    Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c | FUNCIONES_DECLARACION
+    Int Separador Main Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c | FUNCIONES_DECLARACION
 ;
 
 FUNCIONES_DECLARACION ::=
-    Global T_dato Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
-    Func Separador Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
-    Func Separador Identificador Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c
+    FUNCIONES_DECLARACION Func Separador Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
+    FUNCIONES_DECLARACION Func Separador Identificador Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c
+    |
 ;
 
 PARAMETRO::= T_dato Identificador
@@ -79,7 +85,15 @@ SENTENCIA ::=
     SENTENCIA DECLARACIOON_SWITCH |
     DECLARACIOON_SWITCH |
     SENTENCIA FUNCTION_CALL |
-    FUNCTION_CALL
+    FUNCTION_CALL|
+    SENTENCIA SENTENCIA_BOOLEANA |
+    SENTENCIA_BOOLEANA |
+    SENTENCIA OPERACION_ARIT |
+    OPERACION_ARIT |
+    SENTENCIA READ |
+    READ |
+    SENTENCIA WRITE|
+    WRITE
 ;
 
 DECLARACIOON_SWITCH ::= Switch Parentesis_a Identificador Parentesis_c Llave_a CASE_LIST Llave_c
@@ -110,8 +124,13 @@ DECLARACION ::=
     T_dato Identificador Igual FUNCTION_CALL P_coma
 ;
 
+GLOBALES::= GLOBALES Global Separador DECLARACION
+    |
+;
+
 IF ::= If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c
 ;
+
 SENTENCIA_BOOLEANA ::= 
     Op_booleano | 
     Identificador Op_relacional Op_booleano |
@@ -133,3 +152,58 @@ ASIGNACION::=
     Op_incremento Identificador 
 ;
 
+OPERACION_ARIT::= 
+    Numero Suma Numero |
+    Numero Resta Numero | 
+    Numero Multiplicacion Numero |
+    Numero Division Numero | 
+    Numero Potencia Numero |
+    Numero Modulo Numero |
+    Numero Suma OPERACION_ARIT | 
+    Numero Resta OPERACION_ARIT |
+    Numero Multiplicacion OPERACION_ARIT |
+    Numero Division OPERACION_ARIT |
+    Numero Potencia OPERACION_ARIT | 
+    Numero Modulo OPERACION_ARIT |
+    Numero Suma Identificador |
+    Numero Resta Identificador | 
+    Numero Multiplicacion Identificador |
+    Numero Division Identificador | 
+    Numero Potencia Identificador |
+    Numero Modulo Identificador |
+    OPERACION_ARIT Suma Numero |
+    OPERACION_ARIT Resta Numero | 
+    OPERACION_ARIT Multiplicacion Numero |
+    OPERACION_ARIT Division Numero | 
+    OPERACION_ARIT Potencia Numero |
+    OPERACION_ARIT Modulo Numero |
+    OPERACION_ARIT Suma Identificador |
+    OPERACION_ARIT Resta Identificador | 
+    OPERACION_ARIT Multiplicacion Identificador |
+    OPERACION_ARIT Division Identificador | 
+    OPERACION_ARIT Potencia Identificador |
+    OPERACION_ARIT Modulo Identificador |
+    Identificador Suma Identificador |
+    Identificador Resta Identificador | 
+    Identificador Multiplicacion Identificador |
+    Identificador Division Identificador | 
+    Identificador Potencia Identificador |
+    Identificador Modulo Identificador |
+    Identificador Suma OPERACION_ARIT |
+    Identificador Resta  OPERACION_ARIT | 
+    Identificador Multiplicacion OPERACION_ARIT |
+    Identificador Division OPERACION_ARIT | 
+    Identificador Potencia OPERACION_ARIT |
+    Identificador Modulo OPERACION_ARIT |
+    Identificador Suma Numero |
+    Identificador Resta  Numero | 
+    Identificador Multiplicacion Numero |
+    Identificador Division Numero | 
+    Identificador Potencia Numero |
+    Identificador Modulo Numero
+; 
+
+READ::= Read Parentesis_a Identificador Parentesis_a P_coma
+;
+WRITE::= Write Parentesis_a Identificador Parentesis_a P_coma
+;
