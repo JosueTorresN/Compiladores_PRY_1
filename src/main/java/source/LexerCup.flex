@@ -1,7 +1,7 @@
  package source;
 import java_cup.runtime.Symbol;
 %%
-
+ 
 %class LexerCup
 %type java_cup.runtime.Symbol
 %cup
