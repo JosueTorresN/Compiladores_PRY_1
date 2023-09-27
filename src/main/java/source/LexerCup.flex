@@ -119,7 +119,7 @@ espacio=[ ,\t,\r,\n]+
 
 /* Punto y coma */
 ( ";" ) {return new Symbol(sym.P_coma,  yytext());}
-
+ 
 /* Dospuntos */
 ( ":" ) {return new Symbol (sym.P_dospuntos, yytext());}
 
