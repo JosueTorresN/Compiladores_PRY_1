@@ -113,16 +113,16 @@ FUNCTION_CALL::=
 ;
 
 DECLARACION ::= 
-    T_dato Identificador P_coma | 
-    T_dato Identificador Op_atribucion Numero P_coma |
-    T_dato Identificador Igual Numero P_coma |
-    T_dato Identificador Op_incremento P_coma | 
-    T_dato Op_incremento Identificador P_coma | 
-    Cadena Identificador Op_atribucion Comillas Comillas P_coma |
-    Cadena Identificador Igual Comillas Comillas P_coma |
-    Cadena Identificador Op_atribucion Comillas Identificador Comillas P_coma |
-    Cadena Identificador Igual Comillas Identificador Comillas P_coma |
-    T_dato Identificador Igual FUNCTION_CALL P_coma
+    T_dato Separador Identificador P_coma | 
+    T_dato Separador Identificador Op_atribucion Numero P_coma |
+    T_dato Separador Identificador Igual Numero P_coma |
+    T_dato Separador Identificador Op_incremento P_coma | 
+    T_dato Separador Op_incremento Identificador P_coma | 
+    Cadena Separador Identificador Op_atribucion Comillas Comillas P_coma |
+    Cadena Separador Identificador Igual Comillas Comillas P_coma |
+    Cadena Separador Identificador Op_atribucion Comillas Identificador Comillas P_coma |
+    Cadena Separador Identificador Igual Comillas Identificador Comillas P_coma |
+    T_dato Separador Identificador Igual FUNCTION_CALL P_coma
 ;
 
 GLOBALES::= GLOBALES Global Separador DECLARACION
