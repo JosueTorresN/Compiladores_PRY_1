@@ -4,6 +4,7 @@ import java_cup.runtime.*;
 
 parser code {:
 
+
     // Connect this parser to a scanner!
 
     LexerCup lex;
