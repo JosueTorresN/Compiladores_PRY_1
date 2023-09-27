@@ -132,6 +132,12 @@ espacio=[ ,\t,\r,\n]+
 /* Palabra reservada Interrupcion */
 ( "break" ) {return new Symbol(sym.Break,  yytext());}
 
+/* Palabra reservada Leer */
+( "Read" ) {return new Symbol(sym.Read,  yytext());}
+
+/* Palabra reservada Escribir */
+( "Write" ) {return new Symbol(sym.Write,  yytext());}
+
 /* Palabra reservada Return */
 ( "return" ) {return new Symbol(sym.Return,  yytext());}
 
