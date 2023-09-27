@@ -33,11 +33,11 @@ terminal Int, Linea, Comillas, T_dato, Cadena, If, Else, Do, While, For,
     Op_atribucion, Op_incremento, Op_booleano, Parentesis_a, Parentesis_c,
     Llave_a, Llave_c, Corchete_a, Corchete_c, Main, P_coma, Identificador, P_dospuntos, Case_, 
     Switch, Separador, Break, Return, Func, Global, Float, Caracteres, Coma, Default,
-    Numero, Read, Write,ERROR;
+    Numero, Read, Write, ERROR;
 
 //Declaraciones no terminales 
 non terminal PROGRAMA, SENTENCIA, DECLARACION, IF, SENTENCIA_BOOLEANA, WHILE, FOR, ASIGNACION, FUNCIONES_DECLARACION, PARAMETRO, PARAMETROS, DECLARACIOON_SWITCH, CASE, CASE_LIST, FUNCTION_CALL, OPERACION_ARIT,
-GLOBALES, MAIN
+GLOBALES, MAIN, READ, WRITE
 ;
 
 //Precedencias
