@@ -140,7 +140,7 @@ espacio=[ ,\t,\r,\n]+
 
 /* Palabra reservada Return */
 ( "return" ) {return new Symbol(sym.Return,  yytext());}
-
+ 
 /* Palabra reservada Funcion */
 ( "func" ) {return new Symbol(sym.Func,  yytext());}
 
