@@ -32,9 +32,9 @@ public class Principal {
 //        jflex.Main.generate(archivo);
         //generarLexer(rutaJFlex);
         //generarLexer(rutaLexerCup);//activador//
-        generateCup(rutaCup);//activador//
+        //generateCup(rutaCup);//activador//
         //ejercicioParser1("C://Users//Usuario//Desktop//pru.txt");
-        //ejercicioLexer1("C://Users//Usuario//Desktop//pru.txt");        
+        ejercicioLexer1("C://Users//Usuario//Desktop//pru.txt");        
 //generarLexer(rutaLexerCup);
         } catch (Exception ex) {
             Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
@@ -53,26 +53,26 @@ public class Principal {
     }
 //
     
-//public static void ejercicioLexer1(String rutaScanear) throws IOException{
-//        Reader reader = new BufferedReader(new FileReader (rutaScanear));
-//        reader.read();
-//        LexerCup lex = new LexerCup(reader);
-//        int i = 0;
-//        Symbol token;
-//        while(true)
-//        {
-//            token = lex.next_token();
-//            if(token.sym != 0){
-//                System.out.println("Token: "+token.sym+ ", Valor: "+(token.value==null?lex.yytext():token.value.toString()));
-//            }
-//            else{        
-//                System.out.println("Cantidad de lexemas encontrados: "+i);
-//                return;
-//            }
-//            i++;
-//        }
-//    }    
-////
+public static void ejercicioLexer1(String rutaScanear) throws IOException{
+        Reader reader = new BufferedReader(new FileReader (rutaScanear));
+        reader.read();
+        LexerCup lex = new LexerCup(reader);
+        int i = 0;
+        Symbol token;
+        while(true)
+        {
+            token = lex.next_token();
+            if(token.sym != 0){
+                System.out.println("Token: "+token.sym+ ", Valor: "+(token.value==null?lex.yytext():token.value.toString()));
+            }
+            else{        
+                System.out.println("Cantidad de lexemas encontrados: "+i);
+                return;
+            }
+            i++;
+        }
+    }    
+//// 
 //    public static void ejercicioParser1 (String rutaparsear) throws Exception{ 
 //            Reader inputLexer = new FileReader (rutaparsear);
 //            LexerCup myLexer = new LexerCup (inputLexer);
