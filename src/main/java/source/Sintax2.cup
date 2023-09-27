@@ -207,4 +207,4 @@ OPERACION_ARIT::=
 READ::= Read Parentesis_a Identificador Parentesis_a P_coma
 ;
 WRITE::= Write Parentesis_a Identificador Parentesis_a P_coma
-;
+; 
