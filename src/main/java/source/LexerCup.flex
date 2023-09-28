@@ -1,4 +1,4 @@
- package source;
+package source;
 import java_cup.runtime.Symbol;
 %%
  
@@ -24,6 +24,15 @@ espacio=[ ,\t,\r,\n]+
 %}
 %%
 
+/* Tipo de dato Int */
+( "int" ) {return new Symbol(sym.Entero,  yytext());}
+
+/* Tipo de dato Int */
+( "float" ) {return new Symbol(sym.Flotante,  yytext());}
+
+/* Tipo de dato Boolean */
+( "float" ) {return new Symbol(sym.Condicionales,  yytext());}
+
 /* Espacios en blanco */
 {espacio} {/*Ignore*/}
 
@@ -34,7 +43,7 @@ espacio=[ ,\t,\r,\n]+
 ( "\"" ) {return new Symbol(sym.Comillas,  yytext());}
 
 /* Tipos de datos */
-( "byte" | "int" | "char" | "long" | "float" | "double" ) {return new Symbol(sym.T_dato,  yytext());}
+( "int" | "char" | "float" ) {return new Symbol(sym.T_dato,  yytext());}
 
 /* Tipo de dato String */
 ( "String" ) {return new Symbol(sym.Cadena,  yytext());}
@@ -44,9 +53,6 @@ espacio=[ ,\t,\r,\n]+
 
 /* Palabra reservada Else*/
 ( "else" ) {return new Symbol(sym.Else,  yytext());}
-
-/* Palabra reservada Do */
-( "do" ) {return new Symbol(sym.Do,  yytext());}
 
 /* Palabra reservada Switch */
 ( "switch" ) { return new Symbol (sym.Switch, yytext());}
@@ -119,7 +125,7 @@ espacio=[ ,\t,\r,\n]+
 
 /* Punto y coma */
 ( ";" ) {return new Symbol(sym.P_coma,  yytext());}
- 
+
 /* Dospuntos */
 ( ":" ) {return new Symbol (sym.P_dospuntos, yytext());}
 
@@ -154,13 +160,13 @@ espacio=[ ,\t,\r,\n]+
 {L}({L}|{D})* {return new Symbol(sym.Identificador,  yytext());}
 
 /* Caracteres */
-{A}+ {return new Symbol(sym.Caracteres,  yytext());}
+"""{A}""" {return new Symbol(sym.Caracteres,  yytext());}
 
 /* Numero */
-"-"{D}+|{D}+ {return new Symbol(sym.Numero,  yytext());}
+"-"{D}|{D} {return new Symbol(sym.Numero,  yytext());}
 
 /* Float */
-"-"{D}+|{D}+"."{D}+ {return new Symbol(sym.Float,  yytext());}
+("-"{D}|{D})"."{D} {return new Symbol(sym.Float,  yytext());}
 
 /* Error de analisis */
  . {return new Symbol(sym.ERROR,  yytext());}
