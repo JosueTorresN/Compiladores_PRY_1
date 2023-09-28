@@ -24,17 +24,14 @@ public class Principal {
 //        String ruta = System.getProperty("user.dir") + "/src/source/Lexer.flex";
         //String rutaJFlex = "C:/Users/Usuario/Documents/NetBeansProjects/Compiladores_PRY_1/src/main/java/source/Lexer.flex";
         //String rutaCup = "C:/Users/Usuario/Documents/NetBeansProjects/Compiladores_PRY_1/src/main/java/source/Sintax.cup";
-        /*para el Sintax2*/String rutaCup = "C:/Users/Usuario/Documents/NetBeansProjects/Compiladores_PRY_1/src/main/java/source/Sintax2.cup";
+        /*para el Sintax2*/String rutaCup = "D:\\Universidad\\compiladores\\proyecto_1.2\\Compiladores_PRY_1\\src\\main\\java\\source\\Sintax2.cup";
         
-        String rutaLexerCup = "C:/Users/Usuario/Documents/NetBeansProjects/Compiladores_PRY_1/src/main/java/source/LexerCup.flex";
+        String rutaLexerCup = "D:\\Universidad\\compiladores\\proyecto_1.2\\Compiladores_PRY_1\\src\\main\\java\\source\\LexerCup.flex";
         try{
-//        String[] archivo = {ruta};
-//        jflex.Main.generate(archivo);
-        //generarLexer(rutaJFlex);
         generarLexer(rutaLexerCup);//activador//
         generateCup(rutaCup);//activador//
-        //ejercicioParser1("C://Users//Usuario//Desktop//pru.txt");
-        //ejercicioLexer1("C://Users//Usuario//Desktop//pru.txt");        
+//        ejercicioParser1("C://Users//jtn19//Downloads//pru.txt");
+//        ejercicioLexer1("C://Users//jtn19//Downloads//pru.txt");
 //generarLexer(rutaLexerCup);
         } catch (Exception ex) {
             Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
@@ -71,12 +68,13 @@ public class Principal {
 //            }
 //            i++;
 //        }
-//    }    
-//// 
-//    public static void ejercicioParser1 (String rutaparsear) throws Exception{ 
-//            Reader inputLexer = new FileReader (rutaparsear);
-//            LexerCup myLexer = new LexerCup (inputLexer);
-//            Sintax myParser = new Sintax ( myLexer);
-//            myParser.parse();
-//        }
+//    }
+//////
+    public static void ejercicioParser1 (String rutaparsear) throws Exception{ 
+            Reader inputLexer = new FileReader (rutaparsear);
+            LexerCup myLexer = new LexerCup (inputLexer);
+            Sintax myParser = new Sintax ( myLexer);
+//            myParser.debug_parse();
+            myParser.parse();
+    }
 }
