@@ -2,6 +2,27 @@ package source;
 
 import java_cup.runtime.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+action code {:
+    HashMap<String, ArrayList<String>> listaTablasSimbolos = new HashMap<String, ArrayList<String>>();
+    String currentHash = "globalTs";
+    String globalHash = "globalTs";
+
+    public void imprimirTablaSimbolos() {
+        for (String key: listaTablasSimbolos.keySet()) {
+            System.out.println("Tabla de simbolos: " + key);
+            System.out.println("Identificador\tTipo\tValor");
+            for (String id: listaTablasSimbolos.get(key)) {
+                System.out.println(id);
+            }
+            System.out.println("\n");
+        }
+    }
+:}
+
 parser code {:
 
     // Connect this parser to a scanner!
@@ -20,15 +41,15 @@ parser code {:
     }
 :}
 
-init with {: :};
+init with {: :}
 
  
 /* define how to connect to the scanner! */
 
-scan with {: return lex.next_token(); :};
+scan with {: return lex.next_token(); :}
 
 //Declaraciones terminales
-terminal Int, Linea, Comillas, T_dato, Cadena, If, Else, Do, While, For,
+terminal Entero, Flotante, Condicionales, Comillas, T_dato, Cadena, If, Else, While, For,
     Igual, Suma, Resta, Multiplicacion, Division, Potencia, Modulo, Op_logico, Op_relacional,
     Op_atribucion, Op_incremento, Op_booleano, Parentesis_a, Parentesis_c,
     Llave_a, Llave_c, Corchete_a, Corchete_c, Main, P_coma, Identificador, P_dospuntos, Case_, 
@@ -36,38 +57,85 @@ terminal Int, Linea, Comillas, T_dato, Cadena, If, Else, Do, While, For,
     Numero, Read, Write, ERROR;
 
 //Declaraciones no terminales 
-non terminal PROGRAMA, SENTENCIA, DECLARACION, IF, SENTENCIA_BOOLEANA, WHILE, FOR, ASIGNACION, FUNCIONES_DECLARACION, PARAMETRO, PARAMETROS, DECLARACIOON_SWITCH, CASE, CASE_LIST, FUNCTION_CALL, OPERACION_ARIT,
-GLOBALES, MAIN, READ, WRITE
-
-;
+non terminal PROGRAMA, SENTENCIA, DECLARACION, IF, SENTENCIA_BOOLEANA, WHILE, FOR, ASIGNACION, 
+    FUNCIONES_DECLARACION, PARAMETRO, PARAMETROS, DECLARACIOON_SWITCH, CASE, CASE_LIST, FUNCTION_CALL,
+    OPERACION_ARIT, GLOBALES, MAIN, READ, WRITE, FUNC, TIPOS;
 
 //Precedencias
 //precedence left P_coma;
-precedence left T_dato;
+precedence left TIPOS;
 precedence left Cadena;
 precedence left If;
 precedence left While;
 precedence left PARAMETROS, Parentesis_c; //Esta precedencia es utilizada para eliminar los problemas al escoger entre la lista de parametros de una funcion y el parentesis de cierre. ejemplo : f(a,b,c){}->el contenido a,b,c estaba entrando en conflicto con el parentesis decierre antes del precedence. 
 precedence left OPERACION_ARIT, Suma, Resta, Multiplicacion, Division, Potencia, Modulo;
-precedence left FUNCIONES_DECLARACION, Func;
-//Produccion inicial
+precedence left FUNCIONES_DECLARACION, FUNC;
+precedence left TIPOS, Entero, Flotante, Condicionales, Main;
+precedence left PROGRAMA, GLOBALES, TIPOS, MAIN, FUNCIONES_DECLARACION, FUNC;
+
 start with PROGRAMA;
 
-PROGRAMA ::= 
-    GLOBALES MAIN FUNCIONES_DECLARACION 
+
+PROGRAMA ::=
+    {: 
+        System.out.println("PARCER: Inicio programa\n"); 
+        currentHash = "main";
+        ArrayList<String> lista = new ArrayList<String>();
+        String tipoTabla = "Tipo: Funcion: main";
+        lista.add(tipoTabla);
+        listaTablasSimbolos.put(currentHash, lista);
+        System.out.println("PARSER: identificador (agregar o verificar) main");
+    :}
+    MAIN
+    {: 
+        imprimirTablaSimbolos();
+        System.out.println("PARCER: Final programa\n");
+    :} |
+    {: 
+        System.out.println("PARCER: Inicio programa\n"); 
+        listaTablasSimbolos.put(globalHash, new ArrayList<String>());
+    :}
+    GLOBALES MAIN FUNCIONES_DECLARACION
+    {: 
+        imprimirTablaSimbolos();
+        System.out.println("PARCER: Final programa\n");
+    :} 
+
 ;
+
 MAIN::=
-    Int Separador Main Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
-    Int Separador Main Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c | FUNCIONES_DECLARACION
+    TIPOS:tVG Separador Main:idVG Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
+    TIPOS:tVG Separador Main:idVG Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c |
 ;
 
 FUNCIONES_DECLARACION ::=
-    FUNCIONES_DECLARACION Func Separador Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
-    FUNCIONES_DECLARACION Func Separador Identificador Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c
-    |
+    FUNCIONES_DECLARACION FUNC|
+    FUNC
 ;
 
-PARAMETRO::= T_dato Identificador
+FUNC ::=
+    TIPOS:tVG Separador Func Separador Identificador:idVG Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c
+    {:
+        System.out.println("Inicio funcion");
+        ArrayList<String> lista = new ArrayList<String>();
+        currentHash = idVG.toString();
+        String tipoTabla = "Tipo: Funcion: " + tVG.toString();
+        lista.add(tipoTabla);
+        listaTablasSimbolos.put(currentHash, lista);
+    :} |
+    TIPOS:tVG Separador Func Separador Identificador:idVG Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c
+    {:
+        System.out.println("Inicio funcion");
+        ArrayList<String> lista = new ArrayList<String>();
+        currentHash = idVG.toString();
+        String tipoTabla = "Tipo: Funcion: " + tVG.toString();
+        lista.add(tipoTabla);
+        listaTablasSimbolos.put(currentHash, lista);
+    :}
+;
+
+PARAMETRO::= TIPOS:tVG Identificador:idVG {: listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+                     System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString()); :}
 ;
 
 PARAMETROS::= PARAMETROS Coma PARAMETRO 
@@ -87,24 +155,27 @@ SENTENCIA ::=
     DECLARACIOON_SWITCH |
     SENTENCIA FUNCTION_CALL |
     FUNCTION_CALL|
-    SENTENCIA SENTENCIA_BOOLEANA |
-    SENTENCIA_BOOLEANA |
-    SENTENCIA OPERACION_ARIT |
-    OPERACION_ARIT |
+    SENTENCIA SENTENCIA_BOOLEANA:e {:System.out.println(e.toString()); :}  |
+    SENTENCIA_BOOLEANA:e {:System.out.println(e.toString()); :} |
+    SENTENCIA OPERACION_ARIT:e {:System.out.println(e.toString()); :} |
+    OPERACION_ARIT:e {:System.out.println(e.toString()); :} |
     SENTENCIA READ |
     READ |
     SENTENCIA WRITE|
-    WRITE
+    WRITE|
+    Return
 ;
 
 DECLARACIOON_SWITCH ::= Switch Parentesis_a Identificador Parentesis_c Llave_a CASE_LIST Llave_c
 ;
 
-CASE ::= Case_ Identificador P_dospuntos SENTENCIA
+CASE ::= Case_ Numero P_dospuntos SENTENCIA Break P_coma
       | Default P_dospuntos SENTENCIA
 ;
-CASE_LIST ::= CASE CASE_LIST
-                | CASE
+
+CASE_LIST ::= 
+    CASE CASE_LIST
+    |   CASE
 ;
 
 FUNCTION_CALL::=
@@ -113,33 +184,87 @@ FUNCTION_CALL::=
 ;
 
 DECLARACION ::= 
-    T_dato Separador Identificador P_coma | 
-    T_dato Separador Identificador Op_atribucion Numero P_coma |
-    T_dato Separador Identificador Igual Numero P_coma |
-    T_dato Separador Identificador Op_incremento P_coma | 
-    T_dato Separador Op_incremento Identificador P_coma | 
-    Cadena Separador Identificador Op_atribucion Comillas Comillas P_coma |
-    Cadena Separador Identificador Igual Comillas Comillas P_coma |
-    Cadena Separador Identificador Op_atribucion Comillas Identificador Comillas P_coma |
-    Cadena Separador Identificador Igual Comillas Identificador Comillas P_coma |
-    T_dato Separador Identificador Igual FUNCTION_CALL P_coma
-;
-
-GLOBALES::= GLOBALES Global Separador DECLARACION
+    TIPOS:tVG Separador Identificador:idVG P_coma 
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :} | 
+    TIPOS:tVG Separador Identificador:idVG Op_atribucion Numero P_coma 
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :} 
     |
+    TIPOS:tVG Separador Identificador:idVG Igual Numero P_coma 
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :} 
+    |
+    TIPOS:tVG Separador Identificador:idVG Op_incremento P_coma 
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :} | 
+    TIPOS:tVG Separador Op_incremento Identificador:idVG P_coma 
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :} |
+    Cadena:tVG Separador Identificador:idVG Op_atribucion Comillas Comillas P_coma 
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :} |
+    Cadena:tVG Separador Identificador:idVG Igual Comillas Comillas P_coma 
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :} |
+    Cadena:tVG Separador Identificador:idVG Op_atribucion Identificador P_coma 
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :} |
+    Cadena:tVG Separador Identificador:idVG Op_atribucion Caracteres P_coma 
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :} |
+    TIPOS:tVG Separador Identificador:idVG Igual FUNCTION_CALL P_coma
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :} |
+    TIPOS:tVG Separador Identificador:idVG Igual SENTENCIA_BOOLEANA P_coma
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :} |
+    TIPOS:tVG Separador Identificador:idVG Igual OPERACION_ARIT P_coma
+    {: 
+        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
+        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+    :}
 ;
 
-IF ::= If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c
+GLOBALES::= 
+    GLOBALES Global Separador DECLARACION
+    | Global Separador DECLARACION
+;
+
+IF ::= If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c Else Parentesis_c Llave_a SENTENCIA Llave_c |
+    If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c
 ;
 
 SENTENCIA_BOOLEANA ::= 
     Op_booleano | 
-    Identificador Op_relacional Op_booleano |
-    Identificador Op_relacional Numero |
-    Identificador Op_relacional Identificador |
-    Identificador Op_relacional Comillas Comillas |
-    Identificador Op_relacional Comillas Identificador Comillas
+    Identificador:e1 Op_relacional:sigVG Op_booleano:e2 {: RESULT = e1.toString() + sigVG + e2.toString(); System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Op_relacional:sigVG Numero:e2 {: RESULT = e1.toString() + sigVG + e2.toString(); System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Op_relacional:sigVG Identificador:e2 {: RESULT = e1.toString() + sigVG + e2.toString(); System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Op_relacional:sigVG Caracteres:e2 {: RESULT = e1.toString() + sigVG + e2.toString(); System.out.println(e1+"\n"+e1); :}
 ;
+
 WHILE ::= While Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c
 ;
 
@@ -154,57 +279,64 @@ ASIGNACION::=
 ;
 
 OPERACION_ARIT::= 
-    Numero Suma Numero |
-    Numero Resta Numero | 
-    Numero Multiplicacion Numero |
-    Numero Division Numero | 
-    Numero Potencia Numero |
-    Numero Modulo Numero |
-    Numero Suma OPERACION_ARIT | 
-    Numero Resta OPERACION_ARIT |
-    Numero Multiplicacion OPERACION_ARIT |
-    Numero Division OPERACION_ARIT |
-    Numero Potencia OPERACION_ARIT | 
-    Numero Modulo OPERACION_ARIT |
-    Numero Suma Identificador |
-    Numero Resta Identificador | 
-    Numero Multiplicacion Identificador |
-    Numero Division Identificador | 
-    Numero Potencia Identificador |
-    Numero Modulo Identificador |
-    OPERACION_ARIT Suma Numero |
-    OPERACION_ARIT Resta Numero | 
-    OPERACION_ARIT Multiplicacion Numero |
-    OPERACION_ARIT Division Numero | 
-    OPERACION_ARIT Potencia Numero |
-    OPERACION_ARIT Modulo Numero |
-    OPERACION_ARIT Suma Identificador |
-    OPERACION_ARIT Resta Identificador | 
-    OPERACION_ARIT Multiplicacion Identificador |
-    OPERACION_ARIT Division Identificador | 
-    OPERACION_ARIT Potencia Identificador |
-    OPERACION_ARIT Modulo Identificador |
-    Identificador Suma Identificador |
-    Identificador Resta Identificador | 
-    Identificador Multiplicacion Identificador |
-    Identificador Division Identificador | 
-    Identificador Potencia Identificador |
-    Identificador Modulo Identificador |
-    Identificador Suma OPERACION_ARIT |
-    Identificador Resta  OPERACION_ARIT | 
-    Identificador Multiplicacion OPERACION_ARIT |
-    Identificador Division OPERACION_ARIT | 
-    Identificador Potencia OPERACION_ARIT |
-    Identificador Modulo OPERACION_ARIT |
-    Identificador Suma Numero |
-    Identificador Resta  Numero | 
-    Identificador Multiplicacion Numero |
-    Identificador Division Numero | 
-    Identificador Potencia Numero |
-    Identificador Modulo Numero
+    Numero:e1 Suma Numero:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
+    Numero:e1 Resta Numero:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Numero:e1 Multiplicacion Numero:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
+    Numero:e1 Division Numero:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Numero:e1 Potencia Numero:e2 {: RESULT = e1 + "**" + e2; System.out.println(e1+"\n"+e1); :}|
+    Numero:e1 Modulo Numero:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
+    Numero:e1 Suma OPERACION_ARIT:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Numero:e1 Resta OPERACION_ARIT:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}|
+    Numero:e1 Multiplicacion OPERACION_ARIT:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
+    Numero:e1 Division OPERACION_ARIT:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}|
+    Numero:e1 Potencia OPERACION_ARIT:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Numero:e1 Modulo OPERACION_ARIT:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
+    Numero:e1 Suma Identificador:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
+    Numero:e1 Resta Identificador:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Numero:e1 Multiplicacion Identificador:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
+    Numero:e1 Division Identificador:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Numero:e1 Potencia Identificador:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
+    Numero:e1 Modulo Identificador:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
+    OPERACION_ARIT:e1 Suma Numero:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
+    OPERACION_ARIT:e1 Resta Numero:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
+    OPERACION_ARIT:e1 Multiplicacion Numero:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
+    OPERACION_ARIT:e1 Division Numero:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
+    OPERACION_ARIT:e1 Potencia Numero:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
+    OPERACION_ARIT:e1 Modulo Numero:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
+    OPERACION_ARIT:e1 Suma Identificador:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
+    OPERACION_ARIT:e1 Resta Identificador:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
+    OPERACION_ARIT:e1 Multiplicacion Identificador:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
+    OPERACION_ARIT:e1 Division Identificador:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}| 
+    OPERACION_ARIT:e1 Potencia Identificador:e2 {: RESULT = e1 + "**" + e2; System.out.println(e1+"\n"+e1); :}|
+    OPERACION_ARIT:e1 Modulo Identificador:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Suma Identificador:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Resta Identificador:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Identificador:e1 Multiplicacion Identificador:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Division Identificador:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Identificador:e1 Potencia Identificador:e2 {: RESULT = e1 + "**" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Modulo Identificador:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Suma OPERACION_ARIT:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Resta  OPERACION_ARIT:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Identificador:e1 Multiplicacion OPERACION_ARIT:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Division OPERACION_ARIT:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Identificador:e1 Potencia OPERACION_ARIT:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Modulo OPERACION_ARIT:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Suma Numero:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Resta  Numero:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Identificador:e1 Multiplicacion Numero:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Division Numero:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
+    Identificador:e1 Potencia Numero:e2 {: RESULT = e1 + "**" + e2; System.out.println(e1+"\n"+e1); :}|
+    Identificador:e1 Modulo Numero:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}
 ; 
+
+TIPOS::= 
+      Entero {: RESULT = "int"; :}
+    | Flotante {: RESULT = "float"; :}
+    | Condicionales {: RESULT = "bool"; :}
+;
 
 READ::= Read Parentesis_a Identificador Parentesis_a P_coma
 ;
+
 WRITE::= Write Parentesis_a Identificador Parentesis_a P_coma
-; 
+;
