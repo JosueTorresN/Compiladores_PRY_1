@@ -1,7 +1,15 @@
 package source;
 import java_cup.runtime.Symbol;
+import java.util.LinkedList;
+import source.TError;
 %%
  
+//------->Lista que guarda los errores
+%{
+
+
+public static LinkedList<TError> TablaError = new LinkedList<TError>();
+%}
 %class LexerCup
 %type java_cup.runtime.Symbol
 %cup
@@ -9,10 +17,10 @@ import java_cup.runtime.Symbol;
 %line
 %char
 %function next_token
-L=[a-zA-Z_]+
-D=[0-9]+
-A=[a-zA-Z0-9]+
-espacio=[ ,\t,\r,\n]+
+I = [:jletter:] [:jletterdigit:]*
+D= 0 | [1-9][0-9]*
+cadenas=[:jletterdigit:]*
+espacio=[ \t\r\n]+
 %{
     private Symbol symbol(int type, Object value){
         return new Symbol(type, yyline, yycolumn, value);
@@ -31,7 +39,10 @@ espacio=[ ,\t,\r,\n]+
 ( "float" ) {return new Symbol(sym.Flotante,  yytext());}
 
 /* Tipo de dato Boolean */
-( "float" ) {return new Symbol(sym.Condicionales,  yytext());}
+( "bool" ) {return new Symbol(sym.Booleano,  yytext());}
+
+/* Tipo de dato Char */
+( "char" ) {return new Symbol(sym.Char,  yytext());}
 
 /* Espacios en blanco */
 {espacio} {/*Ignore*/}
@@ -39,14 +50,8 @@ espacio=[ ,\t,\r,\n]+
 /* Comentarios */
 ( "//"(.)* ) {/*Ignore*/}
 
-/* Comillas */
-( "\"" ) {return new Symbol(sym.Comillas,  yytext());}
-
-/* Tipos de datos */
-( "int" | "char" | "float" ) {return new Symbol(sym.T_dato,  yytext());}
-
 /* Tipo de dato String */
-( "String" ) {return new Symbol(sym.Cadena,  yytext());}
+( "string" ) {return new Symbol(sym.Cadena,  yytext());}
 
 /* Palabra reservada If */
 ( "if" ) {return new Symbol(sym.If,  yytext());}
@@ -64,7 +69,7 @@ espacio=[ ,\t,\r,\n]+
 ( "while" ) {return new Symbol(sym.While,  yytext());}
 
 /* Palabra reservada For */
-( "forRange " ) {return new Symbol(sym.For,  yytext());}
+( "forRange" ) {return new Symbol(sym.For,  yytext());}
 
 /* Operador Igual */
 ( "=" ) {return new Symbol(sym.Igual,  yytext());}
@@ -79,7 +84,7 @@ espacio=[ ,\t,\r,\n]+
 ( "*" ) {return new Symbol(sym.Multiplicacion,  yytext());}
 
 /* Operador Potencia */
-( "**" ) {return new Symbol(sym.Potencia,  yytext());}
+( "^" ) {return new Symbol(sym.Potencia,  yytext());}
 
 /* Operador Division */
 ( "/" ) {return new Symbol(sym.Division,  yytext());}
@@ -88,13 +93,13 @@ espacio=[ ,\t,\r,\n]+
 ( "%" ) {return new Symbol(sym.Modulo,  yytext());}
 
 /* Operadores logicos */
-( "&&" | "||" | "!" | "&" | "|" ) {return new Symbol(sym.Op_logico,  yytext());}
+( "&&" | "||" | "!" | "&" | "|" | "==") {return new Symbol(sym.Op_logico,  yytext());}
 
 /*Operadores Relacionales */
-( ">" | "<" | "==" | "!=" | ">=" | "<=" | "<<" | ">>" ) {return new Symbol(sym.Op_relacional,  yytext());}
+( ">" | "<" | "==" | "!=" | ">=" | "<=" ) {return new Symbol(sym.Op_relacional,  yytext());}
 
 /* Operadores Atribucion */
-( "+=" | "-="  | "*=" | "/=" | "%=" | "=" ) {return new Symbol(sym.Op_atribucion,  yytext());}
+( "+=" | "-="  | "*=" | "/=" | "%=" ) {return new Symbol(sym.Op_atribucion,  yytext());}
 
 /* Operadores Incremento y decremento */
 ( "++" | "--" ) {return new Symbol(sym.Op_incremento,  yytext());}
@@ -114,17 +119,14 @@ espacio=[ ,\t,\r,\n]+
 /* Llave de cierre */
 ( "}" ) {return new Symbol(sym.Llave_c,  yytext());}
 
-/* Corchete de apertura */
-( "[" ) {return new Symbol(sym.Corchete_a,  yytext());}
-
-/* Corchete de cierre */
-( "]" ) {return new Symbol(sym.Corchete_c,  yytext());}
-
 /* Marcador de inicio de algoritmo */
 ( "main" ) {return new Symbol(sym.Main,  yytext());}
 
 /* Punto y coma */
 ( ";" ) {return new Symbol(sym.P_coma,  yytext());}
+
+/* Coma */
+( "," ) {return new Symbol(sym.Coma,  yytext());}
 
 /* Dospuntos */
 ( ":" ) {return new Symbol (sym.P_dospuntos, yytext());}
@@ -132,23 +134,17 @@ espacio=[ ,\t,\r,\n]+
 /* Palabra reservada Separador */
 ( "#" ) {return new Symbol(sym.Separador,  yytext());}
 
-/* Palabra reservada Coma */
-( "," ) {return new Symbol(sym.Coma,  yytext());}
-
 /* Palabra reservada Interrupcion */
 ( "break" ) {return new Symbol(sym.Break,  yytext());}
 
 /* Palabra reservada Leer */
-( "Read" ) {return new Symbol(sym.Read,  yytext());}
+( "read" ) {return new Symbol(sym.Read,  yytext());}
 
 /* Palabra reservada Escribir */
-( "Write" ) {return new Symbol(sym.Write,  yytext());}
+( "write" ) {return new Symbol(sym.Write,  yytext());}
 
 /* Palabra reservada Return */
 ( "return" ) {return new Symbol(sym.Return,  yytext());}
- 
-/* Palabra reservada Funcion */
-( "func" ) {return new Symbol(sym.Func,  yytext());}
 
 /* Palabra reservada Global */
 ( "global" ) {return new Symbol(sym.Global,  yytext());}
@@ -157,16 +153,30 @@ espacio=[ ,\t,\r,\n]+
 ( "default" ) {return new Symbol(sym.Default,  yytext());}
 
 /* Identificador */
-{L}({L}|{D})* {return new Symbol(sym.Identificador,  yytext());}
+{ I } {return new Symbol(sym.Identificador,  yytext());}
 
-/* Caracteres */
-"""{A}""" {return new Symbol(sym.Caracteres,  yytext());}
+/* Cadena_String */
+"\"" {cadenas} "\"" {return new Symbol(sym.Cadena_String,  yytext());}
+
+/* Cadena_Char */
+"\'" {cadenas} "\'" {return new Symbol(sym.Cadena_Char,  yytext());}
 
 /* Numero */
-"-"{D}|{D} {return new Symbol(sym.Numero,  yytext());}
+(-{D}|{D}) {return new Symbol(sym.Numero,  yytext());}
 
 /* Float */
-("-"{D}|{D})"."{D} {return new Symbol(sym.Float,  yytext());}
+(-{D}|{D})"."{D} {return new Symbol(sym.Float,  yytext());}
 
 /* Error de analisis */
- . {return new Symbol(sym.ERROR,  yytext());}
+. {System.out.println("Error Lexico"+yytext()+" Linea "+yyline+" Columna "+yycolumn);
+TError datos = new TError(yytext(),yyline,yycolumn, "Error Lexico", "Simbolo no existe");
+TablaError.add(datos);}
+
+
+
+
+/* Error de analisis */
+// . {System.out.println("Error Lexico"+yytext()+" Linea "+yyline+" Columna "+yycolumn);
+//TError datos = new TError(yytext(),yyline,yycolumn, "Error Lexico", "Simbolo no existe");
+//TablaError.add(datos);return new Symbol(sym.ERROR,  yytext());}
+
