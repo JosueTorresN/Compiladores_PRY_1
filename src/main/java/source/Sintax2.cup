@@ -6,10 +6,154 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.util.LinkedList;
+import source.TError;
+
 action code {:
     HashMap<String, ArrayList<String>> listaTablasSimbolos = new HashMap<String, ArrayList<String>>();
+    HashMap<String, ArrayList<ArrayList<String>>> listaTablasSimbolosSemantico = new HashMap<String, ArrayList<ArrayList<String>>>();
     String currentHash = "globalTs";
     String globalHash = "globalTs";
+    StringBuffer cod3D = new StringBuffer();
+    int currentTemp = 0;
+    boolean errorSemantico = false;
+
+    public void guardarTablaSimbolosAsig(String id, String valor) {
+        ArrayList<ArrayList<String>> tabla = listaTablasSimbolosSemantico.get(currentHash);
+        int busqueda = buscarSimbolo(id, tabla);
+        if (busqueda!=-1) {
+            guardarTablaSimbolosAsigAux(id, valor, busqueda);
+        } else {
+            listaTablasSimbolos.get(currentHash).add("Identificador: " + id + " <- no declarado");
+        }
+    }
+
+    public void guardarTablaSimbolosAsigAux(String id, String valor, int index) {
+        String tipo = listaTablasSimbolosSemantico.get(currentHash).get(index).get(0);
+        ArrayList<String> lista = new ArrayList<String>();
+        if(tipo.equals("int") && !(valor.matches("[0-9]+") || valor.equals("--") || valor.equals("++") || valor.equals("+=") || valor.equals("-=") || valor.equals("*=") || valor.equals("/=") || valor.equals("%=") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo int");
+        } else if(tipo.equals("float") && !(valor.matches("[0-9]+.[0-9]+") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo float");
+        } else if(tipo.equals("bool") && !(valor.equals("true") || valor.equals("false") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo bool");
+        } else if(tipo.equals("string") && !(valor.matches("\"[a-zA-Z0-9]+\"") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo string");
+        } else if(tipo.equals("char") && !(valor.matches("\'[a-zA-Z0-9]+\'") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo char");
+        } else {
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor);
+        }
+        lista.add(tipo);
+        lista.add(id);
+        lista.add(valor);
+        listaTablasSimbolosSemantico.get(currentHash).set(index, lista);
+    }
+
+    public void guardarTablaSimbolosCreacionAsig(String id, String tipo, String valor) {
+        ArrayList<ArrayList<String>> tabla = listaTablasSimbolosSemantico.get(currentHash);
+        int busqueda = buscarSimbolo(id, tabla);
+        if (busqueda!=-1) {
+            
+            guardarTablaSimbolosCreacionAsigAuxExist(id, tipo, valor, busqueda);
+        } else {
+            guardarTablaSimbolosCreacionAsigAuxNoExist(id, tipo, valor);
+        }
+    }
+
+    public void guardarTablaSimbolosCreacionAsigAuxExist(String id, String tipo, String valor, int index) {
+        ArrayList<String> lista = new ArrayList<String>();
+        if(tipo.equals("int") && !(valor.matches("[0-9]+") || valor.equals("--") || valor.equals("++") || valor.equals("+=") || valor.equals("-=") || valor.equals("*=") || valor.equals("/=") || valor.equals("%=") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo int");
+        } else if(tipo.equals("float") && !(valor.matches("[0-9]+.[0-9]+") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo float");
+        } else if(tipo.equals("bool") && !(valor.equals("true") || valor.equals("false") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo bool");
+        } else if(tipo.equals("string") && !(valor.matches("\"[a-zA-Z0-9]+\"") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo string");
+        } else if(tipo.equals("char") && !(valor.matches("\'[a-zA-Z0-9]+\'") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo char");
+        } else {
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor);
+        }
+        lista.add(tipo);
+        lista.add(id);
+        lista.add(valor);
+        listaTablasSimbolosSemantico.get(currentHash).set(index, lista);
+    }
+
+    public void guardarTablaSimbolosCreacionAsigAuxNoExist(String id, String tipo, String valor) {
+        ArrayList<String> lista = new ArrayList<String>();
+        if(tipo.equals("int") && !(valor.matches("[0-9]+") || valor.equals("--") || valor.equals("++") || valor.equals("+=") || valor.equals("-=") || valor.equals("*=") || valor.equals("/=") || valor.equals("%=") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo int");
+        } else if(tipo.equals("float") && !(valor.matches("[0-9]+.[0-9]+") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo float");
+        } else if(tipo.equals("bool") && !(valor.equals("true") || valor.equals("false") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo bool");
+        } else if(tipo.equals("string") && !(valor.matches("\"[a-zA-Z0-9]+\"") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo string");
+        } else if(tipo.equals("char") && !(valor.matches("\'[a-zA-Z0-9]+\'") || valor.equals("NULL"))) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo char");
+        } else {
+            listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor);
+        }
+        lista.add(tipo);
+        lista.add(id);
+        lista.add(valor);
+        listaTablasSimbolosSemantico.get(currentHash).add(lista);
+    }
+
+    public int buscarSimbolo (String id, ArrayList<ArrayList<String>> lista) {
+        int index = -1;
+        for (int i = 0; i < lista.size(); i++) {
+            if (lista.get(i).get(1).equals(id)) {
+                index = i;
+                break;
+            }
+        }
+        return index;
+    }
+
+    public void newTable(String name, String tipo) {
+        ArrayList<ArrayList<String>> listas = new ArrayList<ArrayList<String>>();
+        ArrayList<String> lista = new ArrayList<String>();
+        currentHash = name;
+        String tipoTabla = "Tipo:" + tipo + " Funcion: " + name;
+        lista.add(tipo);
+        lista.add(name);
+        lista.add("NULL");
+        listas.add(lista);
+        listaTablasSimbolosSemantico.put(currentHash, listas);
+
+        ArrayList<String> lista2 = new ArrayList<String>();
+        lista.add(tipoTabla);
+        listaTablasSimbolos.put(currentHash, lista2);
+
+        if (!errorSemantico) {
+            currentTemp = 0;
+            cod3D.append("\nbeginFunc"+name+":");
+        }
+    }
+
+    public void imprimir3D() {
+        System.out.println("Codigo 3D");
+        System.out.println(cod3D.toString());
+    }
 
     public void imprimirTablaSimbolos() {
         for (String key: listaTablasSimbolos.keySet()) {
@@ -21,10 +165,44 @@ action code {:
             System.out.println("\n");
         }
     }
+
+    public static int potencia(int base, int exponente) {
+        int resultado = 1;
+        for (int i = 0; i < exponente; i++) {
+            resultado *= base;
+        }
+        return resultado;
+    }
+
+
 :}
 
 parser code {:
 
+    public static LinkedList<TError> TablaError = new LinkedList<TError>();
+
+    public void syntax_error(Symbol s){
+        String lexema = s.value.toString();
+        int fila = s.left;
+        int columna = s.right;
+        System.out.println("Lexema erroneo: "+lexema+" Fila: "+ fila+1 +" Columna: "+ columna);
+        
+        TError datos = new TError(lexema,fila,columna,"ERROR SINTACTICO","ERROR DE CARACTER");
+        TablaError.add(datos);
+    }
+
+    public void unrecovered_syntax_error(Symbol s)throws java.lang.Exception{
+        String lexema = s.value.toString();
+        int fila = s.right;
+        int columna = s.left;
+        System.out.println("Lexema erroneo=> "+lexema);
+        System.out.println("Fila=> "+ fila+1);
+        System.out.println("Columna=> " +columna);
+
+        TError datos = new TError(lexema,fila,columna,"ERROR SINTACTICO","ERROR DE CARACTER");
+        TablaError.add(datos);
+    }
+    
     // Connect this parser to a scanner!
 
     LexerCup lex;
@@ -49,294 +227,590 @@ init with {: :}
 scan with {: return lex.next_token(); :}
 
 //Declaraciones terminales
-terminal Entero, Flotante, Condicionales, Comillas, T_dato, Cadena, If, Else, While, For,
+terminal Char, Entero, Flotante, Booleano, Cadena, If, Else, While, For,
     Igual, Suma, Resta, Multiplicacion, Division, Potencia, Modulo, Op_logico, Op_relacional,
     Op_atribucion, Op_incremento, Op_booleano, Parentesis_a, Parentesis_c,
-    Llave_a, Llave_c, Corchete_a, Corchete_c, Main, P_coma, Identificador, P_dospuntos, Case_, 
-    Switch, Separador, Break, Return, Func, Global, Float, Caracteres, Coma, Default,
-    Numero, Read, Write, ERROR;
+    Llave_a, Llave_c, Main, P_coma, Identificador, P_dospuntos, Case_, 
+    Switch, Separador, Break, Return, Global, Float, Cadena_String, Cadena_Char, Coma, Default,
+    Numero, Read, Write;
 
 //Declaraciones no terminales 
-non terminal PROGRAMA, SENTENCIA, DECLARACION, IF, SENTENCIA_BOOLEANA, WHILE, FOR, ASIGNACION, 
-    FUNCIONES_DECLARACION, PARAMETRO, PARAMETROS, DECLARACIOON_SWITCH, CASE, CASE_LIST, FUNCTION_CALL,
-    OPERACION_ARIT, GLOBALES, MAIN, READ, WRITE, FUNC, TIPOS;
+non terminal PROGRAMA, TIPOS, EXPRESION, TERMINO, FACTOR, NUMEROS, CADENAS, SENTENCIA, SENTENCIAS,
+    ASIGNACION, CREACION, CREACION_ASIGNACION, OPERA_RELACIONAL, OPERA_LOGICO, IF_ELSE, WHILE, FOREACH,
+    GLOBALES, GLOBAL, MAIN, PARAMETROS, FUNCION, FUNCIONES, SWITCH, CASES, CASE_, RETURN, READ, WRITE, INICIO,
+    FUNCION_CALL, PARAMETROS_CALL, PARAMETRO_CALL, FUNCION_CUERPO, MAIN_CUERPO, FUNCION_BODY;
 
 //Precedencias
-//precedence left P_coma;
-precedence left TIPOS;
-precedence left Cadena;
-precedence left If;
-precedence left While;
-precedence left PARAMETROS, Parentesis_c; //Esta precedencia es utilizada para eliminar los problemas al escoger entre la lista de parametros de una funcion y el parentesis de cierre. ejemplo : f(a,b,c){}->el contenido a,b,c estaba entrando en conflicto con el parentesis decierre antes del precedence. 
-precedence left OPERACION_ARIT, Suma, Resta, Multiplicacion, Division, Potencia, Modulo;
-precedence left FUNCIONES_DECLARACION, FUNC;
-precedence left TIPOS, Entero, Flotante, Condicionales, Main;
-precedence left PROGRAMA, GLOBALES, TIPOS, MAIN, FUNCIONES_DECLARACION, FUNC;
+precedence left Suma, Resta;
+precedence left EXPRESION, P_coma;
+precedence left OPERA_RELACIONAL, Op_relacional;
+precedence left OPERA_LOGICO, Op_logico;
+precedence left Multiplicacion, Division;
+precedence left Entero, Flotante, Booleano, Cadena, Char;
+precedence left PARAMETRO_CALL, OPERA_RELACIONAL;
+precedence left ASIGNACION, CREACION_ASIGNACION, CREACION, IF_ELSE, WHILE,
+    FOREACH, SWITCH, READ, WRITE, FUNCION_CALL, RETURN;
 
-start with PROGRAMA;
+start with INICIO;
 
+//Producciones
+
+INICIO ::=
+    {: 
+        System.out.println("PARCER: Inicio programa\n");
+        newTable("globalTs", "global");
+    :}
+    PROGRAMA
+    {: 
+        imprimirTablaSimbolos();
+        imprimir3D();
+        System.out.println("PARCER: Final programa\n");
+    :}
+;
 
 PROGRAMA ::=
-    {: 
-        System.out.println("PARCER: Inicio programa\n"); 
-        currentHash = "main";
-        ArrayList<String> lista = new ArrayList<String>();
-        String tipoTabla = "Tipo: Funcion: main";
-        lista.add(tipoTabla);
-        listaTablasSimbolos.put(currentHash, lista);
-        System.out.println("PARSER: identificador (agregar o verificar) main");
-    :}
-    MAIN
-    {: 
-        imprimirTablaSimbolos();
-        System.out.println("PARCER: Final programa\n");
-    :} |
-    {: 
-        System.out.println("PARCER: Inicio programa\n"); 
-        listaTablasSimbolos.put(globalHash, new ArrayList<String>());
-    :}
-    GLOBALES MAIN FUNCIONES_DECLARACION
-    {: 
-        imprimirTablaSimbolos();
-        System.out.println("PARCER: Final programa\n");
-    :} 
-
+    GLOBALES
+    | MAIN
+    | GLOBALES MAIN
+    | GLOBALES MAIN FUNCIONES
+    | MAIN FUNCIONES
+    | FUNCIONES
+    | GLOBALES FUNCIONES
 ;
 
-MAIN::=
-    TIPOS:tVG Separador Main:idVG Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
-    TIPOS:tVG Separador Main:idVG Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c |
+FUNCIONES ::=
+    FUNCION
+    | FUNCION FUNCIONES
 ;
 
-FUNCIONES_DECLARACION ::=
-    FUNCIONES_DECLARACION FUNC|
-    FUNC
-;
-
-FUNC ::=
-    TIPOS:tVG Separador Func Separador Identificador:idVG Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c
+FUNCION_CUERPO ::=
+    TIPOS:tVG Separador Identificador:idVG
     {:
         System.out.println("Inicio funcion");
-        ArrayList<String> lista = new ArrayList<String>();
-        currentHash = idVG.toString();
-        String tipoTabla = "Tipo: Funcion: " + tVG.toString();
-        lista.add(tipoTabla);
-        listaTablasSimbolos.put(currentHash, lista);
-    :} |
-    TIPOS:tVG Separador Func Separador Identificador:idVG Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c
+        newTable(idVG.toString(), tVG.toString());
+    :}
+;
+
+FUNCION ::=
+    FUNCION_CUERPO FUNCION_BODY
+;
+
+FUNCION_BODY ::=
+    Parentesis_a Parentesis_c Llave_a SENTENCIAS Llave_c
+    | Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIAS Llave_c
+    | error Llave_c
+;
+
+MAIN_CUERPO ::=
+    TIPOS:tVG Separador Main:idVG
     {:
-        System.out.println("Inicio funcion");
-        ArrayList<String> lista = new ArrayList<String>();
-        currentHash = idVG.toString();
-        String tipoTabla = "Tipo: Funcion: " + tVG.toString();
-        lista.add(tipoTabla);
-        listaTablasSimbolos.put(currentHash, lista);
+        System.out.println("Inicio main");
+        newTable(idVG.toString(), tVG.toString());
     :}
 ;
 
-PARAMETRO::= TIPOS:tVG Identificador:idVG {: listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-                     System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString()); :}
+MAIN ::=
+    MAIN_CUERPO FUNCION_BODY
 ;
 
-PARAMETROS::= PARAMETROS Coma PARAMETRO 
-    |
-;
-
-SENTENCIA ::= 
-    SENTENCIA DECLARACION |
-    DECLARACION |
-    SENTENCIA IF | 
-    IF |
-    SENTENCIA WHILE |
-    WHILE |
-    SENTENCIA FOR |
-    FOR |
-    SENTENCIA DECLARACIOON_SWITCH |
-    DECLARACIOON_SWITCH |
-    SENTENCIA FUNCTION_CALL |
-    FUNCTION_CALL|
-    SENTENCIA SENTENCIA_BOOLEANA:e {:System.out.println(e.toString()); :}  |
-    SENTENCIA_BOOLEANA:e {:System.out.println(e.toString()); :} |
-    SENTENCIA OPERACION_ARIT:e {:System.out.println(e.toString()); :} |
-    OPERACION_ARIT:e {:System.out.println(e.toString()); :} |
-    SENTENCIA READ |
-    READ |
-    SENTENCIA WRITE|
-    WRITE|
-    Return
-;
-
-DECLARACIOON_SWITCH ::= Switch Parentesis_a Identificador Parentesis_c Llave_a CASE_LIST Llave_c
-;
-
-CASE ::= Case_ Numero P_dospuntos SENTENCIA Break P_coma
-      | Default P_dospuntos SENTENCIA
-;
-
-CASE_LIST ::= 
-    CASE CASE_LIST
-    |   CASE
-;
-
-FUNCTION_CALL::=
-    Identificador Parentesis_a Parentesis_c Llave_a SENTENCIA Llave_c |
-    Identificador Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIA Llave_c
-;
-
-DECLARACION ::= 
-    TIPOS:tVG Separador Identificador:idVG P_coma 
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
-    :} | 
-    TIPOS:tVG Separador Identificador:idVG Op_atribucion Numero P_coma 
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
-    :} 
-    |
-    TIPOS:tVG Separador Identificador:idVG Igual Numero P_coma 
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
-    :} 
-    |
-    TIPOS:tVG Separador Identificador:idVG Op_incremento P_coma 
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
-    :} | 
-    TIPOS:tVG Separador Op_incremento Identificador:idVG P_coma 
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
-    :} |
-    Cadena:tVG Separador Identificador:idVG Op_atribucion Comillas Comillas P_coma 
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
-    :} |
-    Cadena:tVG Separador Identificador:idVG Igual Comillas Comillas P_coma 
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
-    :} |
-    Cadena:tVG Separador Identificador:idVG Op_atribucion Identificador P_coma 
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
-    :} |
-    Cadena:tVG Separador Identificador:idVG Op_atribucion Caracteres P_coma 
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
-    :} |
-    TIPOS:tVG Separador Identificador:idVG Igual FUNCTION_CALL P_coma
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
-    :} |
-    TIPOS:tVG Separador Identificador:idVG Igual SENTENCIA_BOOLEANA P_coma
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
-    :} |
-    TIPOS:tVG Separador Identificador:idVG Igual OPERACION_ARIT P_coma
-    {: 
-        listaTablasSimbolos.get(currentHash).add(tVG.toString() + ":" + idVG.toString());
-        System.out.println("PARSER: identificador (agregar o verificar) " + tVG.toString());
+FUNCION_CALL ::=
+    Identificador:idVG Parentesis_a Parentesis_c P_coma
+    {:
+        cod3D.append("goto " + idVG.toString());
+    :}
+    | Identificador:idVG Parentesis_a PARAMETROS_CALL Parentesis_c P_coma
+    {:
+        cod3D.append("goto " + idVG.toString());
     :}
 ;
 
-GLOBALES::= 
-    GLOBALES Global Separador DECLARACION
-    | Global Separador DECLARACION
+PARAMETROS_CALL ::=
+    PARAMETRO_CALL
+    | PARAMETRO_CALL Coma PARAMETROS_CALL
 ;
 
-IF ::= If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c Else Parentesis_c Llave_a SENTENCIA Llave_c |
-    If Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c
+PARAMETRO_CALL ::=
+    CADENAS
+    | OPERA_LOGICO
+    | FUNCION_CALL
+    | ASIGNACION
 ;
 
-SENTENCIA_BOOLEANA ::= 
-    Op_booleano | 
-    Identificador:e1 Op_relacional:sigVG Op_booleano:e2 {: RESULT = e1.toString() + sigVG + e2.toString(); System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Op_relacional:sigVG Numero:e2 {: RESULT = e1.toString() + sigVG + e2.toString(); System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Op_relacional:sigVG Identificador:e2 {: RESULT = e1.toString() + sigVG + e2.toString(); System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Op_relacional:sigVG Caracteres:e2 {: RESULT = e1.toString() + sigVG + e2.toString(); System.out.println(e1+"\n"+e1); :}
+PARAMETROS ::=
+    TIPOS:tVG Separador:idVG Identificador
+    {:
+        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), "NULL");
+        System.out.println("PARSER: identificador " + idVG.toString());
+    :}
+    | TIPOS Separador Identificador Coma PARAMETROS
 ;
 
-WHILE ::= While Parentesis_a SENTENCIA_BOOLEANA Parentesis_c Llave_a SENTENCIA Llave_c
+SENTENCIAS ::=
+    SENTENCIA
+    | SENTENCIA SENTENCIAS
 ;
 
-FOR ::=
-    For Parentesis_a Numero P_coma SENTENCIA_BOOLEANA P_coma ASIGNACION P_coma Parentesis_c Llave_a SENTENCIA Llave_c
+SENTENCIA ::=
+    ASIGNACION
+    | CREACION_ASIGNACION
+    | CREACION
+    | IF_ELSE
+    | WHILE
+    | FOREACH
+    | SWITCH
+    | READ
+    | WRITE
+    | FUNCION_CALL
+    | RETURN
 ;
 
-ASIGNACION::=
-    Identificador Igual Numero | 
-    Identificador Op_incremento |
-    Op_incremento Identificador 
+READ ::=
+    Read Parentesis_a Identificador Parentesis_c P_coma
 ;
 
-OPERACION_ARIT::= 
-    Numero:e1 Suma Numero:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
-    Numero:e1 Resta Numero:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Numero:e1 Multiplicacion Numero:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
-    Numero:e1 Division Numero:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Numero:e1 Potencia Numero:e2 {: RESULT = e1 + "**" + e2; System.out.println(e1+"\n"+e1); :}|
-    Numero:e1 Modulo Numero:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
-    Numero:e1 Suma OPERACION_ARIT:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Numero:e1 Resta OPERACION_ARIT:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}|
-    Numero:e1 Multiplicacion OPERACION_ARIT:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
-    Numero:e1 Division OPERACION_ARIT:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}|
-    Numero:e1 Potencia OPERACION_ARIT:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Numero:e1 Modulo OPERACION_ARIT:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
-    Numero:e1 Suma Identificador:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
-    Numero:e1 Resta Identificador:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Numero:e1 Multiplicacion Identificador:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
-    Numero:e1 Division Identificador:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Numero:e1 Potencia Identificador:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
-    Numero:e1 Modulo Identificador:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
-    OPERACION_ARIT:e1 Suma Numero:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
-    OPERACION_ARIT:e1 Resta Numero:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
-    OPERACION_ARIT:e1 Multiplicacion Numero:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
-    OPERACION_ARIT:e1 Division Numero:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
-    OPERACION_ARIT:e1 Potencia Numero:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
-    OPERACION_ARIT:e1 Modulo Numero:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
-    OPERACION_ARIT:e1 Suma Identificador:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
-    OPERACION_ARIT:e1 Resta Identificador:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
-    OPERACION_ARIT:e1 Multiplicacion Identificador:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
-    OPERACION_ARIT:e1 Division Identificador:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}| 
-    OPERACION_ARIT:e1 Potencia Identificador:e2 {: RESULT = e1 + "**" + e2; System.out.println(e1+"\n"+e1); :}|
-    OPERACION_ARIT:e1 Modulo Identificador:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Suma Identificador:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Resta Identificador:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Identificador:e1 Multiplicacion Identificador:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Division Identificador:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Identificador:e1 Potencia Identificador:e2 {: RESULT = e1 + "**" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Modulo Identificador:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Suma OPERACION_ARIT:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Resta  OPERACION_ARIT:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Identificador:e1 Multiplicacion OPERACION_ARIT:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Division OPERACION_ARIT:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Identificador:e1 Potencia OPERACION_ARIT:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Modulo OPERACION_ARIT:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Suma Numero:e2 {: RESULT = e1 + "+" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Resta  Numero:e2 {: RESULT = e1 + "-" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Identificador:e1 Multiplicacion Numero:e2 {: RESULT = e1 + "*" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Division Numero:e2 {: RESULT = e1 + "/" + e2; System.out.println(e1+"\n"+e1); :}| 
-    Identificador:e1 Potencia Numero:e2 {: RESULT = e1 + "**" + e2; System.out.println(e1+"\n"+e1); :}|
-    Identificador:e1 Modulo Numero:e2 {: RESULT = e1 + "%" + e2; System.out.println(e1+"\n"+e1); :}
-; 
+WRITE ::=
+    Write Parentesis_a Identificador Parentesis_c P_coma
+;
 
-TIPOS::= 
+RETURN ::=
+    Return EXPRESION P_coma
+    | Return P_coma
+    | Return CADENAS P_coma
+    | Return OPERA_LOGICO P_coma
+    | Return NUMEROS P_coma
+    | Return Identificador P_coma
+;
+
+GLOBALES ::=
+    GLOBAL
+    | GLOBAL GLOBALES
+;
+
+GLOBAL ::=
+    Global Separador CREACION_ASIGNACION
+    {:
+        if (!errorSemantico) {
+            cod3D.append("GLOBAL_DATA_");
+            currentTemp++;
+        }
+    :}
+    | Global Separador CREACION
+    {:
+        if (!errorSemantico) {
+            cod3D.append("GLOBAL_DATA_");
+            currentTemp++;
+        }
+    :}
+;
+
+SWITCH ::=
+    Switch Parentesis_a Identificador Parentesis_c Llave_a CASES Llave_c
+;
+
+CASES ::=
+    CASES CASE_
+    | CASE_
+;
+
+CASE_ ::=
+    Case_ NUMEROS P_dospuntos SENTENCIAS Break P_coma
+    | Default P_dospuntos SENTENCIAS Break P_coma
+;
+
+FOREACH ::=
+    For Parentesis_a CREACION_ASIGNACION OPERA_LOGICO P_coma ASIGNACION Parentesis_c Llave_a SENTENCIAS Llave_c
+;
+
+WHILE ::=
+    While Parentesis_a OPERA_LOGICO Parentesis_c Llave_a SENTENCIAS Llave_c
+;
+
+IF_ELSE ::=
+    If Parentesis_a OPERA_LOGICO Parentesis_c Llave_a SENTENCIAS Llave_c
+    {:
+        if (!errorSemantico) {
+            currentTemp++;
+            cod3D.append("\njumif t"+(currentTemp)+" goto IF_"+currentHash);
+             cod3D.append("\nIF_"+currentHash+":");
+        }
+    :}
+    | If Parentesis_a OPERA_LOGICO Parentesis_c Llave_a SENTENCIAS Llave_c Else Llave_a SENTENCIAS Llave_c
+    {:
+        if (!errorSemantico) {
+            currentTemp++;
+            cod3D.append("\njumif t"+(currentTemp)+" goto IF_ELSE_"+currentHash);
+             cod3D.append("\nIF_ELSE_"+currentHash+":");
+        }
+    :}
+;
+
+CREACION_ASIGNACION ::=
+    TIPOS:tVG Separador Identificador:idVG Igual CADENAS:e P_coma
+    {:
+        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), e.toString());
+        System.out.println("PARSER: identificador " + idVG.toString());
+    :}
+    | TIPOS:tVG Separador Identificador:idVG Igual EXPRESION:e P_coma
+    {:
+        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), e.toString());
+        System.out.println("PARSER: identificador " + idVG.toString());
+    :}
+    | TIPOS:tVG Separador Identificador:idVG Igual OPERA_LOGICO:e P_coma
+    {:
+        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), e.toString());
+        System.out.println("PARSER: identificador " + idVG.toString());
+    :}
+    | error P_coma
+;
+
+CREACION ::=
+    TIPOS:tVG Separador Identificador:idVG P_coma
+    {:
+        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), "NULL");
+        System.out.println("PARSER: identificador " + idVG.toString());
+    :}
+;
+
+ASIGNACION ::=
+    Identificador:idVG  Op_atribucion EXPRESION:e P_coma
+    {:
+        guardarTablaSimbolosAsig(idVG.toString(), e.toString());
+        System.out.println("PARSER: identificador " + idVG.toString());
+        String res = e.toString();
+        if (!errorSemantico) {
+            if (res.equals("+=")) {
+                cod3D.append("t"+(currentTemp+1)+"="+idVG.toString()+"\n");
+                cod3D.append("t"+(currentTemp+2)+"=t"+(currentTemp)+"+t"+(currentTemp+1)+"\n");
+                cod3D.append(idVG.toString()+"= t"+(currentTemp)+"\n");
+                currentTemp+=3;
+            } else if (res.equals("-=")) {
+                cod3D.append("t"+(currentTemp+1)+"="+idVG.toString()+"\n");
+                cod3D.append("t"+(currentTemp+2)+"=t"+(currentTemp)+"+t"+(currentTemp+1)+"\n");
+                cod3D.append(""+idVG.toString()+"= t"+(currentTemp)+"\n");
+                currentTemp+=3;
+            } else if (res.equals("*=")) {
+                cod3D.append("t"+(currentTemp+1)+"="+idVG.toString()+"\n");
+                cod3D.append("t"+(currentTemp+2)+"=t"+(currentTemp)+"+t"+(currentTemp+1)+"\n");
+                cod3D.append(""+idVG.toString()+"= t"+(currentTemp)+"\n");
+                currentTemp+=3;
+            } else if (res.equals("/=")) {
+                cod3D.append("t"+(currentTemp+1)+"="+idVG.toString()+"\n");
+                cod3D.append("t"+(currentTemp+2)+"=t"+(currentTemp)+"+t"+(currentTemp+1)+"\n");
+                cod3D.append(idVG.toString()+"= t"+(currentTemp)+"\n");
+                currentTemp+=3;
+            }
+        }
+    :}
+    | Identificador:idVG Igual EXPRESION:e P_coma
+    {:
+        guardarTablaSimbolosAsig(idVG.toString(), e.toString());
+        System.out.println("PARSER: identificador " + idVG.toString());
+        if (!errorSemantico) {
+            cod3D.append("\n"+idVG.toString()+"= t"+currentTemp);
+            currentTemp++;
+        }
+    :}
+    | Identificador:idVG Op_incremento:e P_coma
+    {:
+        guardarTablaSimbolosAsig(idVG.toString(), e.toString());
+        System.out.println("PARSER: identificador " + idVG.toString());
+        if (!errorSemantico) {  
+            if (e.toString().equals("++")) {
+                cod3D.append("t"+currentTemp+"= "+idVG.toString()+"\n");
+                cod3D.append("t"+(currentTemp+1)+"= t"+currentTemp+"+1"+"\n");
+                cod3D.append(idVG.toString()+"= t"+(currentTemp+1)+"\n");
+                currentTemp+=2;
+            } else {
+                cod3D.append("t"+currentTemp+"= "+idVG.toString()+"\n");
+                cod3D.append("t"+(currentTemp+1)+"= t"+currentTemp+"-1\n");
+                cod3D.append(idVG.toString()+"= t"+(currentTemp+1)+"\n");
+                currentTemp+=2; 
+            }
+
+        }
+    :}
+    | Identificador:idVG Igual CADENAS:e P_coma
+    {:
+        guardarTablaSimbolosAsig(idVG.toString(), e.toString());
+        System.out.println("PARSER: identificador " + idVG.toString());
+        if (!errorSemantico) {
+            cod3D.append("t"+currentTemp+"= t"+idVG.toString()+"\n");
+            cod3D.append("t"+(currentTemp+1)+"= t"+currentTemp+"+1\n");
+            cod3D.append(idVG.toString()+"= t"+(currentTemp+1)+"\n");
+            currentTemp+=2;
+        }
+    :}
+    | Identificador:idVG Igual OPERA_LOGICO:e P_coma
+    {:
+        guardarTablaSimbolosAsig(idVG.toString(), e.toString());
+        System.out.println("PARSER: identificador " + idVG.toString());
+        if (!errorSemantico) {
+            cod3D.append(idVG.toString()+"= t"+(currentTemp)+"\n");
+            currentTemp++;
+        }
+    :}
+
+;   
+
+OPERA_RELACIONAL ::=
+    OPERA_RELACIONAL:e1 Op_relacional:s OPERA_RELACIONAL:e2 
+    {: 
+        boolean res1 = Boolean.valueOf(e1.toString()).booleanValue();
+        boolean res2 = Boolean.valueOf(e2.toString()).booleanValue();
+        String operador = s.toString();
+        if (!errorSemantico) {
+            if (operador.equals("&&")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" > t"+(currentTemp-2)+"\n");
+            } else if (operador.equals("||")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" < t"+(currentTemp-2)+"\n");
+            } else if (operador.equals("!")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" == t"+(currentTemp-2)+"\n");
+            } else if (operador.equals("&")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" != t"+(currentTemp-2)+"\n");
+            } else if (operador.equals("|")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" >= t"+(currentTemp-2)+"\n");
+            } else if (operador.equals("==")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" <=  t"+(currentTemp-2)+"\n");
+            }
+        }
+        RESULT = e1 + s.toString() + e2; 
+    :}
+    | EXPRESION:e {: RESULT = e; :}
+;
+
+OPERA_LOGICO ::=
+    OPERA_LOGICO:e1 Op_logico:s OPERA_LOGICO:e2 
+    {: 
+        boolean res1 = Boolean.valueOf(e1.toString()).booleanValue();
+        boolean res2 = Boolean.valueOf(e2.toString()).booleanValue();
+        String operador = s.toString();
+        if (!errorSemantico) {
+            if (operador.equals("&&")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" && t"+(currentTemp-2)+"\n");
+            } else if (operador.equals("||")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2);
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" || t"+(currentTemp-2)+"\n");
+            } else if (operador.equals("!")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" ! t"+(currentTemp-2)+"\n");
+            } else if (operador.equals("&")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" & t"+(currentTemp-2)+"\n");
+            } else if (operador.equals("|")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" | t"+(currentTemp-2)+"\n");
+            } else if (operador.equals("==")) {
+                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"="+res2+"\n");
+                currentTemp++;
+                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" ==  t"+(currentTemp-2)+"\n");
+            }
+        }
+        RESULT = e1 + s.toString() + e2; 
+
+    :}
+    | OPERA_RELACIONAL:e 
+    {:
+        RESULT = e;
+    :}
+    | Op_booleano:e 
+    {: 
+        cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
+        currentTemp++;
+        RESULT = e;
+    :}
+;
+
+EXPRESION ::=
+    TERMINO:e {: RESULT = e; :}
+    | EXPRESION:e1 Suma:s TERMINO:e2 
+    {: 
+        int e_1 = Integer.parseInt(e1.toString());
+        int e_2 = Integer.parseInt(e2.toString());
+        int res= e_1 + e_2;
+        if (!errorSemantico) {
+            cod3D.append("t"+currentTemp+"="+e_1+"\n");
+            currentTemp++;
+            cod3D.append("t"+currentTemp+"="+e_2+"\n");
+            currentTemp++;
+            cod3D.append("t"+currentTemp+"="+e_1+"+"+e_2+"\n");
+        }
+        RESULT = res; 
+    :}
+    | EXPRESION:e1 Resta:s TERMINO:e2
+    {: 
+        int e_1 = Integer.parseInt(e1.toString());
+        int e_2 = Integer.parseInt(e2.toString());
+        int res= e_1 - e_2;
+        if (!errorSemantico) {
+            cod3D.append("t"+currentTemp+"="+e_1+"\n");
+            currentTemp++;
+            cod3D.append("t"+currentTemp+"="+e_2+"\n");
+            currentTemp++;
+            cod3D.append("t"+currentTemp+"="+e_1+"-"+e_2+"\n");
+        }
+        RESULT = res; 
+    :}
+;
+
+TERMINO ::=
+    FACTOR:e {: RESULT = e; :}
+    | TERMINO:e1 Multiplicacion:s FACTOR:e2
+    {: 
+        int e_1 = Integer.parseInt(e1.toString());
+        int e_2 = Integer.parseInt(e2.toString());
+        int res= e_1 * e_2;
+        if (!errorSemantico) {
+            cod3D.append("t"+currentTemp+"="+e_1+"\n");
+            currentTemp++;
+            cod3D.append("t"+currentTemp+"="+e_2+"\n");
+            currentTemp++;
+            cod3D.append("t"+currentTemp+"="+e_1+"*"+e_2+"\n");
+            currentTemp++;
+        }
+        RESULT = res; 
+    :}
+    | TERMINO:e1 Division:s FACTOR:e2
+    {: 
+        int e_1 = Integer.parseInt(e1.toString());
+        int e_2 = Integer.parseInt(e2.toString());
+        int res= e_1 / e_2;
+        if (!errorSemantico) {
+            cod3D.append("\nt"+currentTemp+"="+e_1);
+            currentTemp++;
+            cod3D.append("\nt"+currentTemp+"="+e_2);
+            currentTemp++;
+            cod3D.append("\nt"+currentTemp+"="+e_1+"/"+e_2);
+        }
+        RESULT = res; 
+    :}
+    | TERMINO:e1 Potencia:s FACTOR:e2
+    {: 
+        int e_1 = Integer.parseInt(e1.toString());
+        int e_2 = Integer.parseInt(e2.toString());
+        int res = potencia(e_1, e_2);
+        if (!errorSemantico) {
+            cod3D.append("\nt"+currentTemp+"="+e_1);
+            currentTemp++;
+            cod3D.append("\nt"+currentTemp+"="+e_2);
+            currentTemp++;
+            cod3D.append("\nt"+currentTemp+"="+e_1+"^"+e_2);
+        }
+        RESULT = res; 
+    :}
+    | TERMINO:e1 Modulo:s FACTOR:e2
+    {: 
+        int e_1 = Integer.parseInt(e1.toString());
+        int e_2 = Integer.parseInt(e2.toString());
+        int res= e_1 % e_2;
+        if (!errorSemantico) {
+            cod3D.append("t"+currentTemp+"="+e_1+"\n");
+            currentTemp++;
+            cod3D.append("t"+currentTemp+"="+e_2+"\n");
+            currentTemp++;
+            cod3D.append("t"+currentTemp+"="+e_1+"%"+e_2+"\n");
+        }
+        RESULT = res; 
+    :}
+;
+
+FACTOR ::=
+    NUMEROS:e {: RESULT = e; :}
+    | Identificador:e
+    {:
+        if (!errorSemantico) {
+            cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
+            currentTemp++;
+        }
+        RESULT = e;
+    :}
+    | Parentesis_a EXPRESION:e Parentesis_c {: RESULT = e; :}
+;
+
+TIPOS ::= 
       Entero {: RESULT = "int"; :}
     | Flotante {: RESULT = "float"; :}
-    | Condicionales {: RESULT = "bool"; :}
+    | Booleano {: RESULT = "bool"; :}
+    | Cadena {: RESULT = "string"; :}
+    | Char {: RESULT = "char"; :}
 ;
 
-READ::= Read Parentesis_a Identificador Parentesis_a P_coma
+NUMEROS ::=
+    Float:e 
+    {:
+        if (!errorSemantico) {
+            cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
+            currentTemp++;
+        }
+        RESULT = e; 
+    :}
+    | Numero:e
+    {:
+        if (!errorSemantico) {
+            cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
+            currentTemp++;
+        }
+        RESULT = e; 
+    :}
 ;
 
-WRITE::= Write Parentesis_a Identificador Parentesis_a P_coma
+CADENAS ::=
+    Cadena_Char:e
+    {:
+        if (!errorSemantico) {
+            cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
+            currentTemp++;
+        }
+        RESULT = e; 
+    :}
+    | Cadena_String:e
+    {:
+        if (!errorSemantico) {
+            cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
+            currentTemp++;
+        }
+
+        RESULT = e;
+    :}
 ;
