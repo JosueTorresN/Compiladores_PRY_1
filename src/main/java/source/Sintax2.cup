@@ -17,6 +17,7 @@ action code {:
     StringBuffer cod3D = new StringBuffer();
     int currentTemp = 0;
     boolean errorSemantico = false;
+    int casesCurrent = 0;
 
     public void guardarTablaSimbolosAsig(String id, String valor) {
         ArrayList<ArrayList<String>> tabla = listaTablasSimbolosSemantico.get(currentHash);
@@ -146,7 +147,7 @@ action code {:
 
         if (!errorSemantico) {
             currentTemp = 0;
-            cod3D.append("\nbeginFunc"+name+":");
+            cod3D.append("beginFunc"+name+":\n");
         }
     }
 
@@ -238,7 +239,8 @@ terminal Char, Entero, Flotante, Booleano, Cadena, If, Else, While, For,
 non terminal PROGRAMA, TIPOS, EXPRESION, TERMINO, FACTOR, NUMEROS, CADENAS, SENTENCIA, SENTENCIAS,
     ASIGNACION, CREACION, CREACION_ASIGNACION, OPERA_RELACIONAL, OPERA_LOGICO, IF_ELSE, WHILE, FOREACH,
     GLOBALES, GLOBAL, MAIN, PARAMETROS, FUNCION, FUNCIONES, SWITCH, CASES, CASE_, RETURN, READ, WRITE, INICIO,
-    FUNCION_CALL, PARAMETROS_CALL, PARAMETRO_CALL, FUNCION_CUERPO, MAIN_CUERPO, FUNCION_BODY;
+    FUNCION_CALL, PARAMETROS_CALL, PARAMETRO_CALL, FUNCION_CUERPO, MAIN_CUERPO, FUNCION_BODY, IF_ELSE_CUERPO,
+    WHILE_CUERPO, FOR_EACH_CUERPO, SWITCH_CUERPO;
 
 //Precedencias
 precedence left Suma, Resta;
@@ -250,6 +252,7 @@ precedence left Entero, Flotante, Booleano, Cadena, Char;
 precedence left PARAMETRO_CALL, OPERA_RELACIONAL;
 precedence left ASIGNACION, CREACION_ASIGNACION, CREACION, IF_ELSE, WHILE,
     FOREACH, SWITCH, READ, WRITE, FUNCION_CALL, RETURN;
+precedence left  If, Else;
 
 start with INICIO;
 
@@ -343,6 +346,11 @@ PARAMETROS ::=
         System.out.println("PARSER: identificador " + idVG.toString());
     :}
     | TIPOS Separador Identificador Coma PARAMETROS
+    TIPOS:tVG Separador:idVG Identificador
+    {:
+        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), "NULL");
+        System.out.println("PARSER: identificador " + idVG.toString());
+    :}
 ;
 
 SENTENCIAS ::=
@@ -403,62 +411,162 @@ GLOBAL ::=
     :}
 ;
 
+SWITCH_CUERPO ::=
+    Switch Parentesis_a Identificador:idVG Parentesis_c
+    {:
+        casesCurrent = 0;
+        if (!errorSemantico) {
+            String temp = "t"+currentTemp;
+            currentTemp++;
+            cod3D.append("SWITCH_"+currentHash+":\n");
+            cod3D.append(temp+idVG.toString()+":\n");
+        }
+    :}
+;
+
 SWITCH ::=
-    Switch Parentesis_a Identificador Parentesis_c Llave_a CASES Llave_c
+    SWITCH_CUERPO Llave_a CASES Llave_c
+    {:
+        if (!errorSemantico) {
+            cod3D.append("END_SWITCH_"+currentHash+"\n");
+        }
+    :}
 ;
 
 CASES ::=
-    CASES CASE_
+    CASE_ CASES
     | CASE_
+    {:
+        if (!errorSemantico) {
+            cod3D.append("END_CASE_"+currentHash+"_"+casesCurrent+":\n");
+        }
+        casesCurrent++;
+    :}
 ;
 
 CASE_ ::=
-    Case_ NUMEROS P_dospuntos SENTENCIAS Break P_coma
+    Case_ NUMEROS:e P_dospuntos SENTENCIAS Break P_coma
+    {:
+        if (!errorSemantico) {
+            cod3D.append("jumif "+(e.toString())+"==t"+(currentTemp-1)+" goto CASE_"+currentHash+"_"+casesCurrent+"\n");
+            cod3D.append("goto END_CASE_"+currentHash+"_"+casesCurrent+"\n");
+            cod3D.append("CASE_"+currentHash+"_"+casesCurrent+":\n");
+        }
+    :}
     | Default P_dospuntos SENTENCIAS Break P_coma
+    {:
+        if (!errorSemantico) {
+            cod3D.append("Default_CASE_"+currentHash+"_"+casesCurrent+":\n");
+            cod3D.append("Default_CASE_"+currentHash+"_"+casesCurrent+":\n");
+        }
+    :}
+;
+
+FOR_EACH_CUERPO ::=
+    For Parentesis_a TIPOS:tVG1 Separador Identificador:idVG1 Igual Numero:e1 P_coma Numero Op_relacional:op Numero P_coma Identificador:idVG2 Op_incremento:e2 Parentesis_c
+    {:
+         String temp1 = "";
+        if (!errorSemantico) {
+            currentTemp++;
+            temp1 = "t"+currentTemp;
+            String[] resp = op.toString().split(":");
+            cod3D.append(temp1+"="+e1.toString());
+            cod3D.append(idVG1.toString()+"="+temp1+"\n");
+
+            cod3D.append("PRE_FOREACH_"+currentHash+":\n");
+            cod3D.append("jumif "+(resp[1])+" goto FOREACH_"+currentHash+"\n");
+            cod3D.append("goto END_FOREACH_"+currentHash+"\n");
+            cod3D.append("FOREACH_"+currentHash+":\n");
+        }
+        RESULT = e1.toString()+":"+temp1+":"+e2.toString();
+    :}
 ;
 
 FOREACH ::=
-    For Parentesis_a CREACION_ASIGNACION OPERA_LOGICO P_coma ASIGNACION Parentesis_c Llave_a SENTENCIAS Llave_c
+    FOR_EACH_CUERPO:e Llave_a SENTENCIAS Llave_c
+    {:
+        if (!errorSemantico) {
+            String[] resp = e.toString().split(":");
+            cod3D.append(resp[1]+"="+resp[1]+"+1\n");
+            cod3D.append("goto PRE_FOREACH_"+currentHash+"\n");
+            cod3D.append("END_FOREACH_"+currentHash+":\n");
+        }
+    :}
+;
+
+WHILE_CUERPO ::=
+    While Parentesis_a OPERA_LOGICO:e Parentesis_c
+    {:
+        String[] resp = e.toString().split(":");
+        if (!errorSemantico) {
+            cod3D.append("PRE_WHILE_"+currentHash+":\n");
+            cod3D.append("jumif "+(resp[1])+" goto WHILE_"+currentHash+"\n");
+            cod3D.append("goto END_WHILE_"+currentHash+"\n");
+            cod3D.append("WHILE_"+currentHash+":\n");
+        }
+    :}
 ;
 
 WHILE ::=
-    While Parentesis_a OPERA_LOGICO Parentesis_c Llave_a SENTENCIAS Llave_c
+    WHILE_CUERPO Llave_a SENTENCIAS Llave_c
+    {:
+        if (!errorSemantico) {
+            cod3D.append("goto PRE_WHILE_"+currentHash+"\n");
+            cod3D.append("END_WHILE_"+currentHash+":\n");
+        }
+    :}
+;
+
+IF_ELSE_CUERPO ::=
+    If Parentesis_a OPERA_LOGICO:e Parentesis_c
+    {:
+        String[] resp = e.toString().split(":");
+        if (!errorSemantico) {
+            cod3D.append("jumif "+(resp[1])+" goto IF_"+currentHash+"\n");
+            cod3D.append("goto ELSE_"+currentHash+"\n");
+            cod3D.append("IF_"+currentHash+":\n");
+        }
+    :}
+    | Else
+    {:
+        if (!errorSemantico) {
+            cod3D.append("ELSE_"+currentHash+":\n");
+        }
+    :}
 ;
 
 IF_ELSE ::=
-    If Parentesis_a OPERA_LOGICO Parentesis_c Llave_a SENTENCIAS Llave_c
-    {:
-        if (!errorSemantico) {
-            currentTemp++;
-            cod3D.append("\njumif t"+(currentTemp)+" goto IF_"+currentHash);
-             cod3D.append("\nIF_"+currentHash+":");
-        }
-    :}
-    | If Parentesis_a OPERA_LOGICO Parentesis_c Llave_a SENTENCIAS Llave_c Else Llave_a SENTENCIAS Llave_c
-    {:
-        if (!errorSemantico) {
-            currentTemp++;
-            cod3D.append("\njumif t"+(currentTemp)+" goto IF_ELSE_"+currentHash);
-             cod3D.append("\nIF_ELSE_"+currentHash+":");
-        }
-    :}
+    IF_ELSE_CUERPO Llave_a SENTENCIAS Llave_c
+    | IF_ELSE_CUERPO Llave_a SENTENCIAS Llave_c IF_ELSE_CUERPO Llave_a SENTENCIAS Llave_c
 ;
 
 CREACION_ASIGNACION ::=
     TIPOS:tVG Separador Identificador:idVG Igual CADENAS:e P_coma
     {:
-        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), e.toString());
+        String[] resp = e.toString().split(":");
+        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), resp[0]);
         System.out.println("PARSER: identificador " + idVG.toString());
+        if (!errorSemantico) {
+            cod3D.append(idVG.toString()+"= "+resp[1]+"\n");
+        }
     :}
     | TIPOS:tVG Separador Identificador:idVG Igual EXPRESION:e P_coma
     {:
-        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), e.toString());
+        String[] resp = e.toString().split(":");
+        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), resp[0]);
         System.out.println("PARSER: identificador " + idVG.toString());
+        if (!errorSemantico) {
+            cod3D.append(idVG.toString()+"= "+resp[1]+"\n");
+        }
     :}
     | TIPOS:tVG Separador Identificador:idVG Igual OPERA_LOGICO:e P_coma
     {:
-        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), e.toString());
+        String[] resp = e.toString().split(":");
+        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), resp[0]);
         System.out.println("PARSER: identificador " + idVG.toString());
+        if (!errorSemantico) {
+            cod3D.append(idVG.toString()+"= "+resp[1]+"\n");
+        }
     :}
     | error P_coma
 ;
@@ -472,81 +580,79 @@ CREACION ::=
 ;
 
 ASIGNACION ::=
-    Identificador:idVG  Op_atribucion EXPRESION:e P_coma
+    Identificador:idVG  Op_atribucion:op EXPRESION:e P_coma
     {:
         guardarTablaSimbolosAsig(idVG.toString(), e.toString());
         System.out.println("PARSER: identificador " + idVG.toString());
-        String res = e.toString();
+        String[] resp = e.toString().split(":");
         if (!errorSemantico) {
-            if (res.equals("+=")) {
-                cod3D.append("t"+(currentTemp+1)+"="+idVG.toString()+"\n");
-                cod3D.append("t"+(currentTemp+2)+"=t"+(currentTemp)+"+t"+(currentTemp+1)+"\n");
-                cod3D.append(idVG.toString()+"= t"+(currentTemp)+"\n");
-                currentTemp+=3;
-            } else if (res.equals("-=")) {
-                cod3D.append("t"+(currentTemp+1)+"="+idVG.toString()+"\n");
-                cod3D.append("t"+(currentTemp+2)+"=t"+(currentTemp)+"+t"+(currentTemp+1)+"\n");
-                cod3D.append(""+idVG.toString()+"= t"+(currentTemp)+"\n");
-                currentTemp+=3;
-            } else if (res.equals("*=")) {
-                cod3D.append("t"+(currentTemp+1)+"="+idVG.toString()+"\n");
-                cod3D.append("t"+(currentTemp+2)+"=t"+(currentTemp)+"+t"+(currentTemp+1)+"\n");
-                cod3D.append(""+idVG.toString()+"= t"+(currentTemp)+"\n");
-                currentTemp+=3;
-            } else if (res.equals("/=")) {
-                cod3D.append("t"+(currentTemp+1)+"="+idVG.toString()+"\n");
-                cod3D.append("t"+(currentTemp+2)+"=t"+(currentTemp)+"+t"+(currentTemp+1)+"\n");
-                cod3D.append(idVG.toString()+"= t"+(currentTemp)+"\n");
-                currentTemp+=3;
+            String temp1 = "t"+currentTemp;
+            currentTemp++;
+            String temp2 = "t"+currentTemp;
+            currentTemp++;
+            cod3D.append(temp1+"="+idVG.toString()+"\n");
+            if (op.toString().equals("+=")) {
+                cod3D.append(temp2+"="+temp1+"+"+resp[1]+"\n");
+                cod3D.append(idVG.toString()+"="+temp2+"\n");
+            } else if (op.toString().equals("-=")) {
+                cod3D.append(temp2+"="+temp1+"-"+resp[1]+"\n");
+                cod3D.append(idVG.toString()+"="+temp2+"\n");;
+            } else if (op.toString().equals("*=")) {
+                cod3D.append(temp2+"="+temp1+"*"+resp[1]+"\n");
+                cod3D.append(idVG.toString()+"="+temp2+"\n");
+            } else if (op.toString().equals("/=")) {
+                cod3D.append(temp2+"="+temp1+"/"+resp[1]+"\n");
+                cod3D.append(idVG.toString()+"="+temp2+"\n");
             }
         }
     :}
     | Identificador:idVG Igual EXPRESION:e P_coma
     {:
-        guardarTablaSimbolosAsig(idVG.toString(), e.toString());
+        String[] resp = e.toString().split(":");
+        guardarTablaSimbolosAsig(idVG.toString(), resp[0].toString());
         System.out.println("PARSER: identificador " + idVG.toString());
         if (!errorSemantico) {
-            cod3D.append("\n"+idVG.toString()+"= t"+currentTemp);
-            currentTemp++;
+            cod3D.append(idVG.toString()+"= "+resp);
         }
     :}
     | Identificador:idVG Op_incremento:e P_coma
     {:
-        guardarTablaSimbolosAsig(idVG.toString(), e.toString());
+        String[] resp = e.toString().split(":");
+        guardarTablaSimbolosAsig(idVG.toString(), resp[0].toString());
         System.out.println("PARSER: identificador " + idVG.toString());
         if (!errorSemantico) {  
+            String temp1 = "t"+currentTemp;
+            currentTemp++;
+            String temp2 = "t"+currentTemp;
+            currentTemp++;
+            String temp3 = "t"+currentTemp;
+            currentTemp++;
+            cod3D.append(temp1+"="+(idVG.toString())+"\n");
+            cod3D.append(temp2+"= 1\n");
             if (e.toString().equals("++")) {
-                cod3D.append("t"+currentTemp+"= "+idVG.toString()+"\n");
-                cod3D.append("t"+(currentTemp+1)+"= t"+currentTemp+"+1"+"\n");
-                cod3D.append(idVG.toString()+"= t"+(currentTemp+1)+"\n");
-                currentTemp+=2;
+                cod3D.append(temp3+"= "+temp1+"+"+temp2+"\n");
             } else {
-                cod3D.append("t"+currentTemp+"= "+idVG.toString()+"\n");
-                cod3D.append("t"+(currentTemp+1)+"= t"+currentTemp+"-1\n");
-                cod3D.append(idVG.toString()+"= t"+(currentTemp+1)+"\n");
-                currentTemp+=2; 
+                cod3D.append(temp3+"= "+temp1+"-"+temp2+"\n");
             }
-
+            cod3D.append(idVG.toString()+"= "+temp3+"\n");
         }
     :}
     | Identificador:idVG Igual CADENAS:e P_coma
     {:
-        guardarTablaSimbolosAsig(idVG.toString(), e.toString());
+        String[] resp = e.toString().split(":");
+        guardarTablaSimbolosAsig(idVG.toString(), resp[0].toString());
         System.out.println("PARSER: identificador " + idVG.toString());
         if (!errorSemantico) {
-            cod3D.append("t"+currentTemp+"= t"+idVG.toString()+"\n");
-            cod3D.append("t"+(currentTemp+1)+"= t"+currentTemp+"+1\n");
-            cod3D.append(idVG.toString()+"= t"+(currentTemp+1)+"\n");
-            currentTemp+=2;
+            cod3D.append(idVG.toString()+"= "+resp[1]+"\n");
         }
     :}
     | Identificador:idVG Igual OPERA_LOGICO:e P_coma
     {:
-        guardarTablaSimbolosAsig(idVG.toString(), e.toString());
+        String[] resp = e.toString().split(":");
+        guardarTablaSimbolosAsig(idVG.toString(), resp[0].toString());
         System.out.println("PARSER: identificador " + idVG.toString());
         if (!errorSemantico) {
-            cod3D.append(idVG.toString()+"= t"+(currentTemp)+"\n");
-            currentTemp++;
+            cod3D.append(idVG.toString()+"= t"+resp[1]+"\n");
         }
     :}
 
@@ -555,49 +661,50 @@ ASIGNACION ::=
 OPERA_RELACIONAL ::=
     OPERA_RELACIONAL:e1 Op_relacional:s OPERA_RELACIONAL:e2 
     {: 
-        boolean res1 = Boolean.valueOf(e1.toString()).booleanValue();
-        boolean res2 = Boolean.valueOf(e2.toString()).booleanValue();
+        String[] resp1 = e1.toString().split(":");
+        String[] resp2 = e2.toString().split(":");
+        int res1 = Integer.parseInt(resp1[0].toString());
+        int res2 = Integer.parseInt(resp2[0].toString());
         String operador = s.toString();
+        String respito = "";
         if (!errorSemantico) {
-            if (operador.equals("&&")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" > t"+(currentTemp-2)+"\n");
-            } else if (operador.equals("||")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" < t"+(currentTemp-2)+"\n");
-            } else if (operador.equals("!")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" == t"+(currentTemp-2)+"\n");
-            } else if (operador.equals("&")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" != t"+(currentTemp-2)+"\n");
-            } else if (operador.equals("|")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" >= t"+(currentTemp-2)+"\n");
+            respito = "t"+currentTemp;
+            currentTemp++;
+            if (operador.equals(">")) {
+
+                cod3D.append(respito+"="+resp1[1]+" > "+resp2[1]+"\n");
+            } else if (operador.equals("<")) { 
+
+                cod3D.append(respito+"="+resp1[1]+" < "+resp2[1]+"\n");
             } else if (operador.equals("==")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" <=  t"+(currentTemp-2)+"\n");
+
+                cod3D.append(respito+"="+resp1[1]+" == "+resp2[1]+"\n");
+            } else if (operador.equals("!=")) {
+
+                cod3D.append(respito+"="+resp1[1]+" != "+resp2[1]+"\n");
+            } else if (operador.equals(">=")) {
+
+                cod3D.append(respito+"="+resp1[1]+" >= "+resp2[1]+"\n");
+            } else if (operador.equals("<=")) {
+
+                cod3D.append(respito+"="+resp1[1]+" <= "+resp2[1]+"\n");
             }
         }
-        RESULT = e1 + s.toString() + e2; 
+        boolean pelegrin = false;
+        if (operador.equals(">")) {
+            pelegrin = res1 > res2;
+        } else if (operador.equals("<")) { 
+            pelegrin = res1 < res2;
+        } else if (operador.equals("==")) {
+            pelegrin = res1 == res2;
+        } else if (operador.equals("!=")) {
+            pelegrin = res1 != res2;
+        } else if (operador.equals(">=")) {
+            pelegrin = res1 >= res2;
+        } else if (operador.equals("<=")) {
+            pelegrin = res1 <= res2;
+        }
+    RESULT = pelegrin+":"+respito;
     :}
     | EXPRESION:e {: RESULT = e; :}
 ;
@@ -605,49 +712,54 @@ OPERA_RELACIONAL ::=
 OPERA_LOGICO ::=
     OPERA_LOGICO:e1 Op_logico:s OPERA_LOGICO:e2 
     {: 
-        boolean res1 = Boolean.valueOf(e1.toString()).booleanValue();
-        boolean res2 = Boolean.valueOf(e2.toString()).booleanValue();
+        String[] resp1 = e1.toString().split(":");
+        String[] resp2 = e2.toString().split(":");
+        boolean res1 = Boolean.valueOf(resp1[0]).booleanValue();
+        boolean res2 = Boolean.valueOf(resp2[0]).booleanValue();
         String operador = s.toString();
+        String respito = "";
         if (!errorSemantico) {
             if (operador.equals("&&")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                respito = "t"+currentTemp;
                 currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" && t"+(currentTemp-2)+"\n");
+                cod3D.append(respito+"="+resp1[1]+" && "+resp2[1]+"\n");
             } else if (operador.equals("||")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                respito = "t"+currentTemp;
                 currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2);
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" || t"+(currentTemp-2)+"\n");
+                cod3D.append(respito+"="+resp1[1]+" || "+resp2[1]+"\n");
             } else if (operador.equals("!")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                respito = "t"+currentTemp;
                 currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" ! t"+(currentTemp-2)+"\n");
+                cod3D.append(respito+"="+resp1[1]+" ! "+resp2[1]+"\n");
             } else if (operador.equals("&")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                respito = "t"+currentTemp;
                 currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" & t"+(currentTemp-2)+"\n");
+                cod3D.append(respito+"="+resp1[1]+" & "+resp2[1]+"\n");
             } else if (operador.equals("|")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                respito = "t"+currentTemp;
                 currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" | t"+(currentTemp-2)+"\n");
+                cod3D.append(respito+"="+resp1[1]+" | "+resp2[1]+"\n");
             } else if (operador.equals("==")) {
-                cod3D.append("t"+currentTemp+"="+res1+"\n");
+                respito = "t"+currentTemp;
                 currentTemp++;
-                cod3D.append("t"+currentTemp+"="+res2+"\n");
-                currentTemp++;
-                cod3D.append("t"+currentTemp+"=t"+(currentTemp-1)+" ==  t"+(currentTemp-2)+"\n");
+                cod3D.append(respito+"="+resp1[1]+" == "+resp2[1]+"\n");
             }
         }
-        RESULT = e1 + s.toString() + e2; 
+        boolean pelegrin = false;
+        if (operador.equals("&&")) {
+            pelegrin = res1 && res2;
+        } else if (operador.equals("||")) { 
+            pelegrin = res1 || res2;
+        } else if (operador.equals("!")) {
+            pelegrin = res1 != res2;
+        } else if (operador.equals("&")) {
+            pelegrin = res1 & res2;
+        } else if (operador.equals("|")) {
+            pelegrin = res1 | res2;
+        } else if (operador.equals("==")) {
+            pelegrin = res1 == res2;
+        }
+        RESULT = pelegrin+":"+respito;
 
     :}
     | OPERA_RELACIONAL:e 
@@ -656,9 +768,13 @@ OPERA_LOGICO ::=
     :}
     | Op_booleano:e 
     {: 
-        cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
-        currentTemp++;
-        RESULT = e;
+        String res = "";
+        if (!errorSemantico) {
+            res = "t"+currentTemp;
+            cod3D.append(res+"="+e.toString()+"\n");
+            currentTemp++;
+        }
+        RESULT = e+":"+res;
     :}
 ;
 
@@ -666,31 +782,33 @@ EXPRESION ::=
     TERMINO:e {: RESULT = e; :}
     | EXPRESION:e1 Suma:s TERMINO:e2 
     {: 
-        int e_1 = Integer.parseInt(e1.toString());
-        int e_2 = Integer.parseInt(e2.toString());
+        String[] resp1 = e1.toString().split(":");
+        String[] resp2 = e2.toString().split(":");
+        int e_1 = Integer.parseInt(resp1[0].toString());
+        int e_2 = Integer.parseInt(resp2[0].toString());
         int res= e_1 + e_2;
+        String respito = "";
         if (!errorSemantico) {
-            cod3D.append("t"+currentTemp+"="+e_1+"\n");
+            respito = "t"+currentTemp;
             currentTemp++;
-            cod3D.append("t"+currentTemp+"="+e_2+"\n");
-            currentTemp++;
-            cod3D.append("t"+currentTemp+"="+e_1+"+"+e_2+"\n");
+            cod3D.append(respito+"="+resp1[1]+"+"+resp2[1]+"\n");
         }
-        RESULT = res; 
+        RESULT = res+":"+respito; 
     :}
     | EXPRESION:e1 Resta:s TERMINO:e2
     {: 
-        int e_1 = Integer.parseInt(e1.toString());
-        int e_2 = Integer.parseInt(e2.toString());
+        String[] resp1 = e1.toString().split(":");
+        String[] resp2 = e2.toString().split(":");
+        int e_1 = Integer.parseInt(resp1[0].toString());
+        int e_2 = Integer.parseInt(resp2[0].toString());
         int res= e_1 - e_2;
+        String respito = "";
         if (!errorSemantico) {
-            cod3D.append("t"+currentTemp+"="+e_1+"\n");
+            respito = "t"+currentTemp;
             currentTemp++;
-            cod3D.append("t"+currentTemp+"="+e_2+"\n");
-            currentTemp++;
-            cod3D.append("t"+currentTemp+"="+e_1+"-"+e_2+"\n");
+            cod3D.append(respito+"="+resp1[1]+"-"+resp2[1]+"\n");
         }
-        RESULT = res; 
+        RESULT = res+":"+respito; 
     :}
 ;
 
@@ -698,60 +816,63 @@ TERMINO ::=
     FACTOR:e {: RESULT = e; :}
     | TERMINO:e1 Multiplicacion:s FACTOR:e2
     {: 
-        int e_1 = Integer.parseInt(e1.toString());
-        int e_2 = Integer.parseInt(e2.toString());
-        int res= e_1 * e_2;
+        String[] resp1 = e1.toString().split(":");
+        String[] resp2 = e2.toString().split(":");
+        int e_1 = Integer.parseInt(resp1[0].toString());
+        int e_2 = Integer.parseInt(resp2[0].toString());
+        int res= e_1 % e_2;
+        String respito = "";
         if (!errorSemantico) {
-            cod3D.append("t"+currentTemp+"="+e_1+"\n");
+            respito = "t"+currentTemp;
             currentTemp++;
-            cod3D.append("t"+currentTemp+"="+e_2+"\n");
-            currentTemp++;
-            cod3D.append("t"+currentTemp+"="+e_1+"*"+e_2+"\n");
-            currentTemp++;
+            cod3D.append(respito+"="+resp1[1]+"*"+resp2[1]+"\n");
         }
-        RESULT = res; 
+        RESULT = res+":"+respito; 
     :}
     | TERMINO:e1 Division:s FACTOR:e2
     {: 
-        int e_1 = Integer.parseInt(e1.toString());
-        int e_2 = Integer.parseInt(e2.toString());
+        String[] resp1 = e1.toString().split(":");
+        String[] resp2 = e2.toString().split(":");
+        int e_1 = Integer.parseInt(resp1[0].toString());
+        int e_2 = Integer.parseInt(resp2[0].toString());
         int res= e_1 / e_2;
+        String respito = "";
         if (!errorSemantico) {
-            cod3D.append("\nt"+currentTemp+"="+e_1);
+            respito = "t"+currentTemp;
             currentTemp++;
-            cod3D.append("\nt"+currentTemp+"="+e_2);
-            currentTemp++;
-            cod3D.append("\nt"+currentTemp+"="+e_1+"/"+e_2);
+            cod3D.append(respito+"="+resp1[1]+"/"+resp2[1]+"\n");
         }
-        RESULT = res; 
+        RESULT = res+":"+respito; 
     :}
     | TERMINO:e1 Potencia:s FACTOR:e2
     {: 
-        int e_1 = Integer.parseInt(e1.toString());
-        int e_2 = Integer.parseInt(e2.toString());
-        int res = potencia(e_1, e_2);
+        String[] resp1 = e1.toString().split(":");
+        String[] resp2 = e2.toString().split(":");
+        int e_1 = Integer.parseInt(resp1[0].toString());
+        int e_2 = Integer.parseInt(resp2[0].toString());
+        int res= e_1 ^ e_2;
+        String respito = "";
         if (!errorSemantico) {
-            cod3D.append("\nt"+currentTemp+"="+e_1);
+            respito = "t"+currentTemp;
             currentTemp++;
-            cod3D.append("\nt"+currentTemp+"="+e_2);
-            currentTemp++;
-            cod3D.append("\nt"+currentTemp+"="+e_1+"^"+e_2);
+            cod3D.append(respito+"="+resp1[1]+"^"+resp2[1]+"\n");
         }
-        RESULT = res; 
+        RESULT = res+":"+respito; 
     :}
     | TERMINO:e1 Modulo:s FACTOR:e2
     {: 
-        int e_1 = Integer.parseInt(e1.toString());
-        int e_2 = Integer.parseInt(e2.toString());
+        String[] resp1 = e1.toString().split(":");
+        String[] resp2 = e2.toString().split(":");
+        int e_1 = Integer.parseInt(resp1[0].toString());
+        int e_2 = Integer.parseInt(resp2[0].toString());
         int res= e_1 % e_2;
+        String respito = "";
         if (!errorSemantico) {
-            cod3D.append("t"+currentTemp+"="+e_1+"\n");
+            respito = "t"+currentTemp;
             currentTemp++;
-            cod3D.append("t"+currentTemp+"="+e_2+"\n");
-            currentTemp++;
-            cod3D.append("t"+currentTemp+"="+e_1+"%"+e_2+"\n");
+            cod3D.append(respito+"="+resp1[1]+"%"+resp2[1]+"\n");
         }
-        RESULT = res; 
+        RESULT = res+":"+respito; 
     :}
 ;
 
@@ -759,11 +880,13 @@ FACTOR ::=
     NUMEROS:e {: RESULT = e; :}
     | Identificador:e
     {:
+        String res = "";
         if (!errorSemantico) {
+            res = "t"+currentTemp;
             cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
             currentTemp++;
         }
-        RESULT = e;
+        RESULT = e+":"+res;
     :}
     | Parentesis_a EXPRESION:e Parentesis_c {: RESULT = e; :}
 ;
@@ -779,38 +902,45 @@ TIPOS ::=
 NUMEROS ::=
     Float:e 
     {:
+        String res = "";
         if (!errorSemantico) {
-            cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
+            res = "t"+currentTemp;
+            cod3D.append(res+"="+e.toString()+"\n");
             currentTemp++;
         }
-        RESULT = e; 
+        RESULT = e+":"+res;
     :}
     | Numero:e
     {:
+        String res = "";
         if (!errorSemantico) {
-            cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
+            res = "t"+currentTemp;
+            cod3D.append(res+"="+e.toString()+"\n");
             currentTemp++;
         }
-        RESULT = e; 
+        RESULT = e+":"+res;
     :}
 ;
 
 CADENAS ::=
     Cadena_Char:e
     {:
+        String res = "";
         if (!errorSemantico) {
-            cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
+            res = "t"+currentTemp;
+            cod3D.append(res+"="+e.toString()+"\n");
             currentTemp++;
         }
-        RESULT = e; 
+        RESULT = e+":"+res;
     :}
     | Cadena_String:e
     {:
+        String res = "";
         if (!errorSemantico) {
-            cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
+            res = "t"+currentTemp;
+            cod3D.append(res+"="+e.toString()+"\n");
             currentTemp++;
         }
-
-        RESULT = e;
+        RESULT = e+":"+res;
     :}
 ;
