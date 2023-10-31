@@ -40,7 +40,7 @@ action code {:
         if(tipo.equals("int") && !(valor.matches("[0-9]+") || valor.equals("--") || valor.equals("++") || valor.equals("+=") || valor.equals("-=") || valor.equals("*=") || valor.equals("/=") || valor.equals("%=") || valor.equals("NULL"))) {
             errorSemantico = true;
             listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo int");
-        } else if(tipo.equals("float") && !(valor.matches("[0-9]+.[0-9]+") || valor.equals("NULL"))) {
+        } else if(tipo.equals("float") && !(valor.matches("[0-9]+.[0-9]+") || valor.equals("--") || valor.equals("++") || valor.equals("+=") || valor.equals("-=") || valor.equals("*=") || valor.equals("/=") || valor.equals("%=") || valor.equals("NULL"))) {
             errorSemantico = true;
             listaTablasSimbolos.get(currentHash).add(tipo + ":" + id + " = " + valor + " <- error de tipo float");
         } else if(tipo.equals("bool") && !(valor.equals("true") || valor.equals("false") || valor.equals("NULL"))) {
@@ -653,9 +653,9 @@ CREACION ::=
 ASIGNACION ::=
     Identificador:idVG  Op_atribucion:op EXPRESION:e P_coma
     {:
-        guardarTablaSimbolosAsig(idVG.toString(), e.toString());
         System.out.println("PARSER: identificador " + idVG.toString());
         String[] resp = e.toString().split(":");
+        guardarTablaSimbolosAsig(idVG.toString(), resp[0].toString());
         if (!errorSemantico) {
             String temp1 = "t"+currentTemp;
             currentTemp++;
