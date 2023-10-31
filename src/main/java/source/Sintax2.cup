@@ -5,6 +5,11 @@ import java_cup.runtime.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 import java.util.LinkedList;
 import source.TError;
@@ -134,7 +139,7 @@ action code {:
         ArrayList<ArrayList<String>> listas = new ArrayList<ArrayList<String>>();
         ArrayList<String> lista = new ArrayList<String>();
         currentHash = name;
-        String tipoTabla = "Tipo:" + tipo + " Funcion: " + name;
+        String tipoTabla = "Tipo:" + tipo + "-Funcion:" + name;
         lista.add(tipo);
         lista.add(name);
         lista.add("NULL");
@@ -142,7 +147,7 @@ action code {:
         listaTablasSimbolosSemantico.put(currentHash, listas);
 
         ArrayList<String> lista2 = new ArrayList<String>();
-        lista.add(tipoTabla);
+        lista2.add(tipoTabla);
         listaTablasSimbolos.put(currentHash, lista2);
 
         if (!errorSemantico) {
@@ -175,6 +180,53 @@ action code {:
         return resultado;
     }
 
+    public void StringToFile() {
+        String contenido = cod3D.toString();
+
+        // Ruta del archivo de texto
+        String rutaArchivo = "3D_Code.txt";
+
+        try {
+            // Crear un objeto File que representa el archivo
+            File archivo = new File(rutaArchivo);
+
+            // Crear un FileWriter para escribir en el archivo
+            FileWriter fileWriter = new FileWriter(archivo);
+
+            // Crear un BufferedWriter para mejorar el rendimiento de escritura
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+
+            // Crear un PrintWriter para escribir el contenido en el archivo
+            PrintWriter printWriter = new PrintWriter(bufferedWriter);
+
+            // Escribir el contenido en el archivo
+            printWriter.println(contenido);
+
+            // Cerrar los flujos
+            printWriter.close();
+            bufferedWriter.close();
+            fileWriter.close();
+
+            System.out.println("El archivo ha sido creado con éxito.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String obtenerDatoDeTabla(String id) {
+        ArrayList<ArrayList<String>> tabla = listaTablasSimbolosSemantico.get(currentHash);
+        int busqueda = buscarSimbolo(id, tabla);
+        return listaTablasSimbolosSemantico.get(currentHash).get(busqueda).get(2);
+    }
+
+    public void existeEnTabla(String id) {
+        ArrayList<ArrayList<String>> tabla = listaTablasSimbolosSemantico.get(currentHash);
+        int busqueda = buscarSimbolo(id, tabla);
+        if (busqueda==-1) {
+            listaTablasSimbolos.get(currentHash).add(id + " <- error en la variable de switch");
+            errorSemantico = true;
+        }
+    }
 
 :}
 
@@ -240,7 +292,7 @@ non terminal PROGRAMA, TIPOS, EXPRESION, TERMINO, FACTOR, NUMEROS, CADENAS, SENT
     ASIGNACION, CREACION, CREACION_ASIGNACION, OPERA_RELACIONAL, OPERA_LOGICO, IF_ELSE, WHILE, FOREACH,
     GLOBALES, GLOBAL, MAIN, PARAMETROS, FUNCION, FUNCIONES, SWITCH, CASES, CASE_, RETURN, READ, WRITE, INICIO,
     FUNCION_CALL, PARAMETROS_CALL, PARAMETRO_CALL, FUNCION_CUERPO, MAIN_CUERPO, FUNCION_BODY, IF_ELSE_CUERPO,
-    WHILE_CUERPO, FOR_EACH_CUERPO, SWITCH_CUERPO;
+    WHILE_CUERPO, FOR_EACH_CUERPO, SWITCH_CUERPO, PARAMETRO, DEFAULT_, CASES_, FOR_AISGNACION;
 
 //Precedencias
 precedence left Suma, Resta;
@@ -267,6 +319,7 @@ INICIO ::=
     {: 
         imprimirTablaSimbolos();
         imprimir3D();
+        StringToFile();
         System.out.println("PARCER: Final programa\n");
     :}
 ;
@@ -339,18 +392,17 @@ PARAMETRO_CALL ::=
     | ASIGNACION
 ;
 
+PARAMETRO ::=
+    TIPOS:tVG Separador Identificador:idVG
+    {:
+        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), "NULL");
+        System.out.println("PARSER: identificador " + idVG.toString());
+    :}
+;
+
 PARAMETROS ::=
-    TIPOS:tVG Separador:idVG Identificador
-    {:
-        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), "NULL");
-        System.out.println("PARSER: identificador " + idVG.toString());
-    :}
-    | TIPOS Separador Identificador Coma PARAMETROS
-    TIPOS:tVG Separador:idVG Identificador
-    {:
-        guardarTablaSimbolosCreacionAsig(idVG.toString(), tVG.toString(), "NULL");
-        System.out.println("PARSER: identificador " + idVG.toString());
-    :}
+    PARAMETRO
+    | PARAMETRO Coma PARAMETROS
 ;
 
 SENTENCIAS ::=
@@ -414,6 +466,7 @@ GLOBAL ::=
 SWITCH_CUERPO ::=
     Switch Parentesis_a Identificador:idVG Parentesis_c
     {:
+        existeEnTabla(idVG.toString());
         casesCurrent = 0;
         if (!errorSemantico) {
             String temp = "t"+currentTemp;
@@ -425,7 +478,7 @@ SWITCH_CUERPO ::=
 ;
 
 SWITCH ::=
-    SWITCH_CUERPO Llave_a CASES Llave_c
+    SWITCH_CUERPO Llave_a CASES_ Llave_c
     {:
         if (!errorSemantico) {
             cod3D.append("END_SWITCH_"+currentHash+"\n");
@@ -433,8 +486,12 @@ SWITCH ::=
     :}
 ;
 
+CASES_ ::=
+    CASES DEFAULT_
+;
+
 CASES ::=
-    CASE_ CASES
+    CASES CASE_
     | CASE_
     {:
         if (!errorSemantico) {
@@ -444,8 +501,17 @@ CASES ::=
     :}
 ;
 
+DEFAULT_ ::=
+    Default P_dospuntos SENTENCIAS Break P_coma
+    {:
+        if (!errorSemantico) {
+            cod3D.append("Default_CASE_"+currentHash+"_"+casesCurrent+":\n");
+        }
+    :}
+;
+
 CASE_ ::=
-    Case_ NUMEROS:e P_dospuntos SENTENCIAS Break P_coma
+    Case_ Separador NUMEROS:e P_dospuntos SENTENCIAS Break P_coma
     {:
         if (!errorSemantico) {
             cod3D.append("jumif "+(e.toString())+"==t"+(currentTemp-1)+" goto CASE_"+currentHash+"_"+casesCurrent+"\n");
@@ -453,32 +519,37 @@ CASE_ ::=
             cod3D.append("CASE_"+currentHash+"_"+casesCurrent+":\n");
         }
     :}
-    | Default P_dospuntos SENTENCIAS Break P_coma
+;
+
+FOR_AISGNACION ::= 
+    TIPOS:tVG1 Separador Identificador:idVG1 Igual Numero:e1
     {:
+        guardarTablaSimbolosCreacionAsig(idVG1.toString(), tVG1.toString(), e1.toString());
+        String temp1 = "";
         if (!errorSemantico) {
-            cod3D.append("Default_CASE_"+currentHash+"_"+casesCurrent+":\n");
-            cod3D.append("Default_CASE_"+currentHash+"_"+casesCurrent+":\n");
+            currentTemp++;
+            temp1 = "t"+currentTemp;
+            
+            cod3D.append(temp1+"="+e1.toString());
+            cod3D.append(idVG1.toString()+"="+temp1+"\n");
+            cod3D.append(idVG1.toString()+"="+e1.toString()+"\n");
         }
+        RESULT = e1.toString()+":"+temp1;
     :}
 ;
 
 FOR_EACH_CUERPO ::=
-    For Parentesis_a TIPOS:tVG1 Separador Identificador:idVG1 Igual Numero:e1 P_coma Numero Op_relacional:op Numero P_coma Identificador:idVG2 Op_incremento:e2 Parentesis_c
+    For Parentesis_a FOR_AISGNACION:e1 P_coma OPERA_RELACIONAL:op P_coma Identificador:idVG2 Op_incremento:e2 Parentesis_c
     {:
-         String temp1 = "";
+        String[] resp2 = e1.toString().split(":");
+        String[] resp = op.toString().split(":");
         if (!errorSemantico) {
-            currentTemp++;
-            temp1 = "t"+currentTemp;
-            String[] resp = op.toString().split(":");
-            cod3D.append(temp1+"="+e1.toString());
-            cod3D.append(idVG1.toString()+"="+temp1+"\n");
-
             cod3D.append("PRE_FOREACH_"+currentHash+":\n");
             cod3D.append("jumif "+(resp[1])+" goto FOREACH_"+currentHash+"\n");
             cod3D.append("goto END_FOREACH_"+currentHash+"\n");
             cod3D.append("FOREACH_"+currentHash+":\n");
         }
-        RESULT = e1.toString()+":"+temp1+":"+e2.toString();
+        RESULT = resp2[0]+":"+resp2[1]+":"+e2.toString();
     :}
 ;
 
@@ -665,6 +736,7 @@ OPERA_RELACIONAL ::=
         String[] resp2 = e2.toString().split(":");
         int res1 = Integer.parseInt(resp1[0].toString());
         int res2 = Integer.parseInt(resp2[0].toString());
+        System.out.println("PARSER: Prueva en S ope " + s);
         String operador = s.toString();
         String respito = "";
         if (!errorSemantico) {
@@ -690,21 +762,8 @@ OPERA_RELACIONAL ::=
                 cod3D.append(respito+"="+resp1[1]+" <= "+resp2[1]+"\n");
             }
         }
-        boolean pelegrin = false;
-        if (operador.equals(">")) {
-            pelegrin = res1 > res2;
-        } else if (operador.equals("<")) { 
-            pelegrin = res1 < res2;
-        } else if (operador.equals("==")) {
-            pelegrin = res1 == res2;
-        } else if (operador.equals("!=")) {
-            pelegrin = res1 != res2;
-        } else if (operador.equals(">=")) {
-            pelegrin = res1 >= res2;
-        } else if (operador.equals("<=")) {
-            pelegrin = res1 <= res2;
-        }
-    RESULT = pelegrin+":"+respito;
+
+    RESULT = "true"+":"+respito;
     :}
     | EXPRESION:e {: RESULT = e; :}
 ;
@@ -719,47 +778,30 @@ OPERA_LOGICO ::=
         String operador = s.toString();
         String respito = "";
         if (!errorSemantico) {
+            respito = "t"+currentTemp;
+            currentTemp++;
             if (operador.equals("&&")) {
-                respito = "t"+currentTemp;
-                currentTemp++;
+
                 cod3D.append(respito+"="+resp1[1]+" && "+resp2[1]+"\n");
             } else if (operador.equals("||")) {
-                respito = "t"+currentTemp;
-                currentTemp++;
+
                 cod3D.append(respito+"="+resp1[1]+" || "+resp2[1]+"\n");
             } else if (operador.equals("!")) {
-                respito = "t"+currentTemp;
-                currentTemp++;
+
                 cod3D.append(respito+"="+resp1[1]+" ! "+resp2[1]+"\n");
             } else if (operador.equals("&")) {
-                respito = "t"+currentTemp;
-                currentTemp++;
+
                 cod3D.append(respito+"="+resp1[1]+" & "+resp2[1]+"\n");
             } else if (operador.equals("|")) {
-                respito = "t"+currentTemp;
-                currentTemp++;
+
                 cod3D.append(respito+"="+resp1[1]+" | "+resp2[1]+"\n");
             } else if (operador.equals("==")) {
-                respito = "t"+currentTemp;
-                currentTemp++;
+
                 cod3D.append(respito+"="+resp1[1]+" == "+resp2[1]+"\n");
             }
         }
-        boolean pelegrin = false;
-        if (operador.equals("&&")) {
-            pelegrin = res1 && res2;
-        } else if (operador.equals("||")) { 
-            pelegrin = res1 || res2;
-        } else if (operador.equals("!")) {
-            pelegrin = res1 != res2;
-        } else if (operador.equals("&")) {
-            pelegrin = res1 & res2;
-        } else if (operador.equals("|")) {
-            pelegrin = res1 | res2;
-        } else if (operador.equals("==")) {
-            pelegrin = res1 == res2;
-        }
-        RESULT = pelegrin+":"+respito;
+
+        RESULT = "true"+":"+respito;
 
     :}
     | OPERA_RELACIONAL:e 
@@ -780,7 +822,7 @@ OPERA_LOGICO ::=
 
 EXPRESION ::=
     TERMINO:e {: RESULT = e; :}
-    | EXPRESION:e1 Suma:s TERMINO:e2 
+    | EXPRESION:e1 Suma TERMINO:e2 
     {: 
         String[] resp1 = e1.toString().split(":");
         String[] resp2 = e2.toString().split(":");
@@ -795,7 +837,7 @@ EXPRESION ::=
         }
         RESULT = res+":"+respito; 
     :}
-    | EXPRESION:e1 Resta:s TERMINO:e2
+    | EXPRESION:e1 Resta TERMINO:e2
     {: 
         String[] resp1 = e1.toString().split(":");
         String[] resp2 = e2.toString().split(":");
@@ -881,12 +923,16 @@ FACTOR ::=
     | Identificador:e
     {:
         String res = "";
+        String recope = "";
+        // existeEnTabla(e.toString());
         if (!errorSemantico) {
             res = "t"+currentTemp;
             cod3D.append("t"+currentTemp+"="+e.toString()+"\n");
             currentTemp++;
+            recope = obtenerDatoDeTabla(e.toString());
         }
-        RESULT = e+":"+res;
+        
+        RESULT = e.toString()+":"+res;
     :}
     | Parentesis_a EXPRESION:e Parentesis_c {: RESULT = e; :}
 ;
