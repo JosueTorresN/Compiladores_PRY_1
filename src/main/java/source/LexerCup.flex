@@ -5,6 +5,7 @@ import source.TError;
 %%
  
 //------->Lista que guarda los errores
+
 %{
 
 public static LinkedList<TError> TablaError = new LinkedList<TError>();
