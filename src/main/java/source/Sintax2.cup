@@ -683,7 +683,7 @@ ASIGNACION ::=
         guardarTablaSimbolosAsig(idVG.toString(), resp[0].toString());
         System.out.println("PARSER: identificador " + idVG.toString());
         if (!errorSemantico) {
-            cod3D.append(idVG.toString()+"= "+resp);
+            cod3D.append(idVG.toString()+"= "+resp[1]);
         }
     :}
     | Identificador:idVG Op_incremento:e P_coma
