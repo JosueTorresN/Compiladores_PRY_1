@@ -19,6 +19,7 @@ public static LinkedList<TError> TablaError = new LinkedList<TError>();
 I = [:jletter:] [:jletterdigit:]*
 D= 0 | [1-9][0-9]*
 cadenas=[:jletterdigit:]*
+caracter=[:jletterdigit:]
 espacio=[ \t\r\n]+
 %{
     private Symbol symbol(int type, Object value){
@@ -158,13 +159,20 @@ espacio=[ \t\r\n]+
 "\"" {cadenas} "\"" {return new Symbol(sym.Cadena_String,  yytext());}
 
 /* Cadena_Char */
-"\'" {cadenas} "\'" {return new Symbol(sym.Cadena_Char,  yytext());}
+"\'" {caracter} "\'" {return new Symbol(sym.Cadena_Char,  yytext());}
 
 /* Numero */
 (-{D}|{D}) {return new Symbol(sym.Numero,  yytext());}
 
 /* Float */
 (-{D}|{D})"."{D} {return new Symbol(sym.Float,  yytext());}
+
+
+/* Comentario_simple*/
+"//" {cadenas} {return new Symbol(sym.Coment_Simp,  yytext());}
+
+/* Comentario_completo */
+"/*" {cadenas} "*/" {return new Symbol(sym.Coment_Comp,  yytext());}
 
 /* Error de analisis */
 . {System.out.println("Error Lexico"+yytext()+" Linea "+yyline+" Columna "+yycolumn);
