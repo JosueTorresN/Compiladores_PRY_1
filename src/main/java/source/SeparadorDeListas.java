@@ -99,7 +99,7 @@ public class SeparadorDeListas {
         for (int i = 1; i < inputLines.size(); i++) {
             String line = inputLines.get(i);
             
-            //System.out.println("Lado izquierdo "+line);
+            
             if (line.contains("=") && !compararConLista(line)) {//Si tiene igual y si no es una variable declarada en el data entonces ingresa
                 //System.out.println("respuesta de la comparacion "+compararConLista(line));
                 String[] parts = line.split("=");
@@ -172,6 +172,12 @@ public class SeparadorDeListas {
                     String value = rightHandSide.trim();
                     generatedLines.add("li $" + dest + ", " + value);
                 }
+            }else if(line.split(" ")[0].trim().equals("goto")){
+                
+                String[] nparts = line.split(" ");
+                String nrightHandSide = nparts[1].trim();
+                String nVar = nrightHandSide.replace("goto","j");
+                generatedLines.add("j "+nVar);
             }else{
                 if(line.startsWith("begin_Func_globalTs:")){
                     generatedLines.add(".text");
