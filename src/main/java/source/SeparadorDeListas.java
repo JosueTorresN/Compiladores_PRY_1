@@ -18,11 +18,15 @@ import java.util.Arrays;
 import java.util.List;
 
 public class SeparadorDeListas {
-    private boolean[] registrosT = new  boolean[10];
+    private static boolean[] registrosT = new  boolean[10];
+    private static List<String> generatedLines2 = new ArrayList<>();
     private static List<String> generatedLines = new ArrayList<>();
     private static String[] lista = {"variable_globalTs_", "variable_int_", "variable_forEach_main_","variable_main_"};
     private static String reserOperaciones = "\\^%+\\-\\*&/";
+    
+    
     public static void main(String[] args) {
+        setearRegistrosT();
         String filePath = "C:\\Users\\Usuario\\Documents\\NetBeansProjects\\Compiladores_PRY_1\\3D_Code.txt"; // Reemplaza con la ruta de tu archivo
 
         try {
@@ -33,11 +37,15 @@ public class SeparadorDeListas {
                 convertToAssembler(list);//LLamada a la funcion que escribe el asm
                 printList(list);
             }
+            
         } catch (IOException e) {
             e.printStackTrace();
         }
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("output.asm"))) {
-            for (String asmLine : generatedLines) {
+            procesarCodigoMIPS(generatedLines);
+            //evaluarTs(generatedLines);
+            for (String asmLine : generatedLines2) {
+                //System.out.println("Impresion de " +asmLine);
                 writer.write(asmLine);
                 writer.newLine();
             }
@@ -82,9 +90,9 @@ public class SeparadorDeListas {
     // Imprime los elementos de una lista
     public static void printList(List<String> list) {
         for (String element : list) {
-            //System.out.println(element);
+            System.out.println(element);
         }
-        //System.out.println("---- Fin de la lista ----");
+        System.out.println("---- Fin de la lista ----");
     }
     
     
@@ -112,8 +120,8 @@ public class SeparadorDeListas {
                     generatedLines.add("sw $" + rightHandSide + ", " + leftHandSide);
                 }
                 
-                //
-                if (rightHandSide.startsWith("-")) {
+                //ojo esto era un if
+                else if (rightHandSide.startsWith("-")) {
                     // Es un número negativo
                     String dest = leftHandSide;
                     String value = rightHandSide.substring(1).trim(); // Eliminar el signo negativo
@@ -178,6 +186,8 @@ public class SeparadorDeListas {
                 String nrightHandSide = nparts[1].trim();
                 String nVar = nrightHandSide.replace("goto","j");
                 generatedLines.add("j "+nVar);
+            }else if(line.isEmpty()){
+                System.out.println("fin del contenido");
             }else{
                 if(line.startsWith("begin_Func_globalTs:")){
                     generatedLines.add(".text");
@@ -185,7 +195,7 @@ public class SeparadorDeListas {
                     generatedLines.add(line);
                 }else{
                     
-                    generatedLines.add(" . "+splitter(line));
+                    generatedLines.add("  "+splitter(line)+":"+" .word 0");
                 }
             }
         }
@@ -208,7 +218,7 @@ public class SeparadorDeListas {
         return false; // No se encontró coincidencia
     }
     
-    //Funcion encargada de compara el valor proveniente del metodo convertToAssembler y 
+    //Funcion encargada de retornar el valor resultante de splitear un string que comparta palabras reservadas por el codigo 3d 
     public static String splitter(String str) {
         // Lista de valores predefinidos
 
@@ -229,7 +239,7 @@ public class SeparadorDeListas {
          // No se encontró coincidencia
         return null;
     }
-    
+    //Funcion encargada de crear potencias 
     public static void creadorPotencias(String src1,String src2){
         System.out.println("Hay");
         generatedLines.add("move $t0, "+src1);
@@ -241,5 +251,97 @@ public class SeparadorDeListas {
         generatedLines.add("fin_bucle:");
         generatedLines.add("  jr ra");
     }
-    
+    //Funcion encargada de setear los registro t en falso al inicio del programa
+    public static void setearRegistrosT(){
+        for(int i=0; i!=10; i++){
+            registrosT[i] = false;
+        }
+    }
+    //Funcion encargada del control de la reasignacion de registros 
+    public static void procesarCodigoMIPS(List<String> codigoMIPS) {        
+        for (String instruccion : codigoMIPS) {
+            if (instruccion.startsWith("li")) {
+                procesarInstruccionLI(instruccion);
+            } else if (instruccion.startsWith("add") || instruccion.startsWith("div") || instruccion.startsWith("addi")) {
+                procesarInstruccionAritmetica(instruccion);
+            } else if (instruccion.startsWith("sw")) {
+                procesarInstruccionSW(instruccion);
+            }else{
+                generatedLines2.add(instruccion);
+                //System.out.println("instrucciones =>"+instruccion);
+            }
+        }
+    }
+    //Funcion encargada de procesar las etiquetas y reasignar registros
+    private static void procesarInstruccionLI(String instruccion) {
+        // Obtener el registro temporal
+        String registro = instruccion.split(",")[0].split("\\s+")[1];
+        System.out.println("registro "+registro);
+        
+        String temVarReg = registro.replace("$t", "");
+        int tempVarInt = Integer.valueOf(temVarReg);
+        //System.out.println("registro tem "+temVarReg);
+        // Verificar si el registro está en uso
+        //if (registrosT[obtenerIndiceRegistro(registro)]) {
+        if (registrosT[obtenerIndiceRegistro(registro)]) {
+            // Cambiar el registro a uno disponible
+            String nuevoRegistro = obtenerRegistroDisponible();
+            instruccion = instruccion.replace(registro, nuevoRegistro);
+        }
+
+        // Marcar el registro como en uso
+        registrosT[obtenerIndiceRegistro(instruccion.split(",")[0].split("\\s+")[1])] = true;
+
+        // Procesar la instrucción y almacenar el resultado
+        generatedLines2.add(instruccion);
+    }
+    private static void procesarInstruccionAritmetica(String instruccion) {
+        // Obtener los registros temporales
+        String[] registros = instruccion.split(",");
+        String registroDestino = registros[0].split("\\s+")[1];
+        String registroFuente1 = registros[1].trim();
+        String registroFuente2 = registros[2].trim();
+
+        // Liberar el registro usado por la derecha
+        registrosT[obtenerIndiceRegistro(registroFuente1)] = false;
+        registrosT[obtenerIndiceRegistro(registroFuente2)] = false;
+
+        // Marcar el registro destino como en uso
+        registrosT[obtenerIndiceRegistro(registroDestino)] = true;
+
+        // Procesar la instrucción y almacenar el resultado
+        generatedLines2.add(instruccion);
+    }
+
+    private static void procesarInstruccionSW(String instruccion) {
+        // Obtener los registros y el destino de sw
+        String[] partes = instruccion.split(",");
+        String registroFuente = partes[0].split("\\s+")[1].trim();
+        String destino = partes[1].trim();
+
+        // Liberar el registro usado por la derecha
+        registrosT[obtenerIndiceRegistro(registroFuente)] = false;
+
+        // Procesar la instrucción y almacenar el resultado
+        generatedLines2.add(instruccion);
+    }
+    //Funcion encargada de obtener el indice
+    private static int obtenerIndiceRegistro(String registro) {
+        System.out.println("registro optenido "+registro.substring(1));
+        String temVarReg = registro.replace("$t", "");
+        int tempVarInt = Integer.valueOf(temVarReg);
+        return tempVarInt;
+    }
+    //Funcion encargada de saber si un registro se encuentra en disposicion de uso 
+    private static String obtenerRegistroDisponible() {
+        for (int i = 0; i < registrosT.length; i++) {
+            if (!registrosT[i]) {
+                registrosT[i] = true;
+                return "t" + i;
+            }
+        }
+        // Aquí podrías manejar el caso en el que no hay registros disponibles
+        throw new IllegalStateException("No hay registros temporales disponibles.");
+    }
+
 }
