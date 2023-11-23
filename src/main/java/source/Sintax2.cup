@@ -143,7 +143,7 @@ action code {:
         cod3D.append(currentTemp1+"="+id+"\n");
         currentTemp++;
         String currentTemp2 = "t"+currentTemp;
-        cod3D.append(currentTemp2+"="+valor+"\n");
+        cod3D.append(currentTemp2+"="+resp[1]+"\n");
         currentTemp++;
         String currentTemp3 = "t"+currentTemp;
         cod3D.append(currentTemp3+"="+currentTemp1+simb+currentTemp2+"\n");
@@ -900,7 +900,7 @@ TIPOS ::=
 NUMEROS ::=
     Float:e 
     {:
-        String res = "t"+currentTemp;
+        String res = "f"+currentTemp;
         cod3D.append(res+"="+e.toString()+"\n");
         currentTemp++;
         RESULT = e+":float:"+res;
