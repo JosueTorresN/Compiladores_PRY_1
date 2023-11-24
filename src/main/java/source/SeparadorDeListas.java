@@ -202,6 +202,12 @@ public class SeparadorDeListas {
                     // Asignación simple
                     String dest = leftHandSide;
                     String value = rightHandSide.trim();
+                    System.out.println("Caso especial"+"li $" + dest + ", " + value);
+                    if(value.equals("true")){
+                        value = "1";
+                    }else if(value.equals("false")){
+                        value = "0";
+                    }
                     generatedLines.add("li $" + dest + ", " + value);
                 }
             }else if(line.split(" ")[0].trim().equals("goto")){
