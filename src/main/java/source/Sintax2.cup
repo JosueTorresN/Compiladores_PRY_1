@@ -138,7 +138,7 @@ action code {:
 
     public void verificarIdentificadorAtrib(String id, String valor, String simb) {
         String[] resp = valor.split(":");
-        cod3D.append(id+"="+resp[0]+"\n");
+        //cod3D.append(id+"="+resp[0]+"\n");
         String currentTemp1 = "t"+currentTemp;
         cod3D.append(currentTemp1+"="+id+"\n");
         currentTemp++;
@@ -147,6 +147,7 @@ action code {:
         currentTemp++;
         String currentTemp3 = "t"+currentTemp;
         cod3D.append(currentTemp3+"="+currentTemp1+simb+currentTemp2+"\n");
+        cod3D.append(id+"="+currentTemp3+"\n");
         currentTemp++;
         listaTablasSimbolos.get(currentHash).add(id + "=" + currentTemp3);
         if (buscarPorValor(id)) {
