@@ -22,7 +22,7 @@ public class SeparadorDeListas {
     private static List<String> generatedLines2 = new ArrayList<>();
     private static List<String> generatedLines = new ArrayList<>();
     private static String[] lista = {"variable_globalTs_", "variable_int_", "variable_forEach_main_","variable_main_","variable_nuevaFuncion_"};
-    private static String reserOperaciones = "\\^%+\\-\\*&!/";
+    private static String reserOperaciones = "\\^%+\\-\\*&!<>;:,/";
     private static List<String> dataLista = new ArrayList<>();//Lista que contiene los elementos de data
     
     
@@ -143,7 +143,9 @@ public class SeparadorDeListas {
                     String dest = leftHandSide;
                     String src1 = operationParts[0].trim();
                     //System.out.println("lado izq "+leftHandSide+" src1 "+src1);
-                    String src2 = operationParts[1].trim();                    
+                    System.out.println("vea => "+Arrays.toString(operationParts)+ "derecha carac "+rightHandSide);
+                    String src2 = operationParts[1].trim();    
+                    
                     String operator = rightHandSide.replaceAll("[^"+reserOperaciones+"]", "");
                     
                     // Reemplazar los símbolos
@@ -179,10 +181,22 @@ public class SeparadorDeListas {
                         case ";":
                             operator = "beq";
                             break;
+                         case "<":
+                            operator = "bgt";
+                            break;
+                         case ">":
+                            operator = "blt";
+                            break;
+                         case ":":
+                            operator = "bge";
+                            break;  
+                         case ",":
+                            operator = "ble";
+                            break; 
                         // Puedes agregar casos para otros operadores aquí
                     }
                     
-                    if(operator.equals("bnq")||operator.equals("beq")){
+                    if(operator.equals("bnq")||operator.equals("beq")||operator.equals("bgt")||operator.equals("blt")||operator.equals("bge")||operator.equals("ble")){
                         String nline = inputLines.get(i+1);
                         if(nline.startsWith("jumif")){
                             i++;
@@ -300,7 +314,20 @@ public class SeparadorDeListas {
             return line.split("goto");
         }else if(line.contains("==")){
             line = line.replace("==", ";");
+            return line.split("=");        
+        }else if(line.contains("<=")){
+            line = line.replace("<=", ":");
             return line.split("=");
+        }else if(line.contains(">=")){
+            line = line.replace(">=", ",");
+            return line.split("=");
+        }else if(line.contains("<")){
+            //line = line.replace("<", "<");
+            return line.split("=");
+        }else if(line.contains(">")){
+            //line = line.replace("<", "<");
+            return line.split("=");
+   
         }else{
             return line.split("=");
         }
