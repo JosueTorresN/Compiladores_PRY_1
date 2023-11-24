@@ -124,7 +124,7 @@ public class SeparadorDeListas {
                 //System.out.println("Elemento de la derecha "+rightHandSide);
                 //System.out.println("Eelementos data "+dataLista);
                 if(dataLista.contains(rightHandSide)){
-                    generatedLines.add("lw $" + rightHandSide + ", " + leftHandSide);
+                    generatedLines.add("lw $" + leftHandSide + ", " + rightHandSide);
                 }else if(!assignedToTemp){
                     generatedLines.add("sw $" + rightHandSide + ", " + leftHandSide);
                 }
