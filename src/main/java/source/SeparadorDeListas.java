@@ -21,8 +21,9 @@ public class SeparadorDeListas {
     private static boolean[] registrosT = new  boolean[10];
     private static List<String> generatedLines2 = new ArrayList<>();
     private static List<String> generatedLines = new ArrayList<>();
-    private static String[] lista = {"variable_globalTs_", "variable_int_", "variable_forEach_main_","variable_main_"};
-    private static String reserOperaciones = "\\^%+\\-\\*&/";
+    private static String[] lista = {"variable_globalTs_", "variable_int_", "variable_forEach_main_","variable_main_","variable_nuevaFuncion_"};
+    private static String reserOperaciones = "\\^%+\\-\\*&!/";
+    private static List<String> dataLista = new ArrayList<>();//Lista que contiene los elementos de data
     
     
     public static void main(String[] args) {
@@ -42,9 +43,9 @@ public class SeparadorDeListas {
             e.printStackTrace();
         }
         try (BufferedWriter writer = new BufferedWriter(new FileWriter("output.asm"))) {
-            procesarCodigoMIPS(generatedLines);
-            //evaluarTs(generatedLines);
-            for (String asmLine : generatedLines2) {
+            //procesarCodigoMIPS(generatedLines);
+            
+            for (String asmLine : generatedLines) {//Se puede cambiar a generatedLines para revisar el recorrdo primario
                 //System.out.println("Impresion de " +asmLine);
                 writer.write(asmLine);
                 writer.newLine();
@@ -90,9 +91,9 @@ public class SeparadorDeListas {
     // Imprime los elementos de una lista
     public static void printList(List<String> list) {
         for (String element : list) {
-            System.out.println(element);
+            //System.out.println(element);
         }
-        System.out.println("---- Fin de la lista ----");
+        //System.out.println("---- Fin de la lista ----");
     }
     
     
@@ -108,15 +109,23 @@ public class SeparadorDeListas {
             String line = inputLines.get(i);
             
             
-            if (line.contains("=") && !compararConLista(line)) {//Si tiene igual y si no es una variable declarada en el data entonces ingresa
+            if (line.contains("=") && !compararConLista(line)) {//Si tiene igual, no tiene diferente(!=) y si no es una variable declarada en el data entonces ingresa
                 //System.out.println("respuesta de la comparacion "+compararConLista(line));
-                String[] parts = line.split("=");
+                
+                
+                //String[] parts = line.split("=");
+                String[] parts = definidorDeSplit(line);
                 String leftHandSide = parts[0].trim();
                 String rightHandSide = parts[1].trim();
-                //System.out.println("Elemento "+rightHandSide);
+                //System.out.println("Elemento izquierda "+leftHandSide+" Elemento derecha "+rightHandSide);
                 //
                 boolean assignedToTemp = leftHandSide.matches("t[0-9]+");
-                if(!assignedToTemp){
+                boolean assignedToTempRight = rightHandSide.matches("t[0-9]+");
+                //System.out.println("Elemento de la derecha "+rightHandSide);
+                //System.out.println("Eelementos data "+dataLista);
+                if(dataLista.contains(rightHandSide)){
+                    generatedLines.add("lw $" + rightHandSide + ", " + leftHandSide);
+                }else if(!assignedToTemp){
                     generatedLines.add("sw $" + rightHandSide + ", " + leftHandSide);
                 }
                 
@@ -163,12 +172,27 @@ public class SeparadorDeListas {
                             break;
                         case "|":
                             operator = "or";
-                            break;     
+                            break; 
+                        case "!":
+                            operator = "bnq";
+                            break;
+                        case ";":
+                            operator = "beq";
+                            break;
                         // Puedes agregar casos para otros operadores aquí
                     }
                     
-                    if (!operator.equals("pot")){
-                    generatedLines.add(operator + " $" + dest + ", $" + src1 + ", $" + src2);
+                    if(operator.equals("bnq")||operator.equals("beq")){
+                        String nline = inputLines.get(i+1);
+                        if(nline.startsWith("jumif")){
+                            i++;
+                            String[] nParts = definidorDeSplit(nline);
+                            //String nLeftHandSide = parts[0].trim();
+                            String nRightHandSide = nParts[1].trim();
+                            generatedLines.add(operator + " $" + src1 + ", $" + src2 + ", " + nRightHandSide );
+                        }
+                    }else if (!operator.equals("pot")){
+                        generatedLines.add(operator + " $" + dest + ", $" + src1 + ", $" + src2);
                     }else{
                         creadorPotencias(src1,src2);
                        
@@ -188,19 +212,22 @@ public class SeparadorDeListas {
                 generatedLines.add("j "+nVar);
             }else if(line.isEmpty()){
                 System.out.println("fin del contenido");
+//            }else if(line.startsWith("jumif")){
+//                int largo = generatedLines.size()-1;
+//                String modifElemento = generatedLines.get(largo);
+                //Continuar aqui
             }else{
                 if(line.startsWith("begin_Func_globalTs:")){
                     generatedLines.add(".text");
                 }else if(line.contains(":")){
                     generatedLines.add(line);
                 }else{
-                    
+                    dataLista.add(splitter(line));
                     generatedLines.add("  "+splitter(line)+":"+" .word 0");
                 }
             }
         }
     }
-    
     //Funcion encargada de compara el valor proveniente del metodo convertToAssembler y 
     public static boolean compararConLista(String str) {
         // Lista de valores predefinidos
@@ -257,6 +284,34 @@ public class SeparadorDeListas {
             registrosT[i] = false;
         }
     }
+    //Funcion encargada de regresar el split adecuado dependiendo de si es (<,>,=,!=)
+    public static String[] definidorDeSplit(String line){
+        if(line.contains("!=")){
+            line = line.replace("!=", "!");
+            return line.split("=");
+            
+        }else if(line.contains("jumif ")){
+            return line.split("goto");
+        }else if(line.contains("==")){
+            line = line.replace("==", ";");
+            return line.split("=");
+        }else{
+            return line.split("=");
+        }
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     //Funcion encargada del control de la reasignacion de registros 
     public static void procesarCodigoMIPS(List<String> codigoMIPS) {        
         for (String instruccion : codigoMIPS) {
