@@ -108,9 +108,9 @@ public class SeparadorDeListas {
         for (int i = 1; i < inputLines.size(); i++) {
             String line = inputLines.get(i);
             
-            
+            //System.out.println("Respuesta de la comparacion "+line);
             if (line.contains("=") && !compararConLista(line)) {//Si tiene igual, no tiene diferente(!=) y si no es una variable declarada en el data entonces ingresa
-                System.out.println("Respuesta de la comparacion "+line);
+                
                 
                 
                 //String[] parts = line.split("=");
@@ -121,7 +121,7 @@ public class SeparadorDeListas {
                 //
                 boolean assignedToTemp = leftHandSide.matches("t[0-9]+")||leftHandSide.matches("f[0-9]+");
                 boolean assignedToF = leftHandSide.matches("f[0-9]+");
-                boolean assignedToTempRight = rightHandSide.matches("t[0-9]+");
+                //boolean assignedToTempRight = rightHandSide.matches("t[0-9]+");
                 //System.out.println("Elemento de la derecha "+rightHandSide);
                 //System.out.println("Eelementos data "+dataLista);
                 if(dataLista.contains(rightHandSide)){
@@ -144,7 +144,7 @@ public class SeparadorDeListas {
                     String dest = leftHandSide;
                     String src1 = operationParts[0].trim();
                     //System.out.println("lado izq "+leftHandSide+" src1 "+src1);
-                    System.out.println("vea => "+Arrays.toString(operationParts)+ "derecha carac "+rightHandSide);
+                    //System.out.println("vea => "+Arrays.toString(operationParts)+ "derecha carac "+rightHandSide);
                     String src2 = operationParts[1].trim();    
                     
                     String operator = rightHandSide.replaceAll("[^"+reserOperaciones+"]", "");
@@ -199,6 +199,7 @@ public class SeparadorDeListas {
                     
                     if(operator.equals("bnq")||operator.equals("beq")||operator.equals("bgt")||operator.equals("blt")||operator.equals("bge")||operator.equals("ble")){
                         String nline = inputLines.get(i+1);
+                        //System.out.println("Pasa por aqui "+nline);
                         if(nline.startsWith("jumif")){
                             i++;
                             String[] nParts = definidorDeSplit(nline);
@@ -214,10 +215,11 @@ public class SeparadorDeListas {
                     }
                     //Agragar un if para guardar el cocioente si operador == div
                 } else {
+                    
                     // Asignación simple
                     String dest = leftHandSide;
                     String value = rightHandSide.trim();
-                    System.out.println("Caso especial"+"li $" + dest + ", " + value);
+                    //System.out.println("Caso especial"+"li $" + dest + ", " + value);
                     if(value.equals("true")){
                         value = "1";
                         generatedLines.add("li $" + dest + ", " + value);
@@ -225,7 +227,11 @@ public class SeparadorDeListas {
                         value = "0";
                         generatedLines.add("li $" + dest + ", " + value);
                     }else if(assignedToF){
+                        
                         generatedLines.add("li.s $" + dest + ", " + value);
+                    }else{
+                        System.out.println("Respuesta de la comparacion "+line+" des "+dest);
+                        generatedLines.add("li $" + dest + ", " + value);
                     }
                   
                 }
@@ -248,6 +254,7 @@ public class SeparadorDeListas {
                     generatedLines.add(line);
                 }else{
                     dataLista.add(splitter(line));
+                    //System.out.println("La linea es "+splitter(line));
                     generatedLines.add("  "+splitter(line)+":"+" .word 0");
                 }
             }
@@ -311,11 +318,13 @@ public class SeparadorDeListas {
     }
     //Funcion encargada de regresar el split adecuado dependiendo de si es (<,>,=,!=)
     public static String[] definidorDeSplit(String line){
+        
         if(line.contains("!=")){
             line = line.replace("!=", "!");
             return line.split("=");
             
         }else if(line.contains("jumif ")){
+            //System.out.println("La linea es "+line.split("goto")[1]);
             return line.split("goto");
         }else if(line.contains("==")){
             line = line.replace("==", ";");
