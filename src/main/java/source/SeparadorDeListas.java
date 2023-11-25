@@ -110,7 +110,7 @@ public class SeparadorDeListas {
             
             
             if (line.contains("=") && !compararConLista(line)) {//Si tiene igual, no tiene diferente(!=) y si no es una variable declarada en el data entonces ingresa
-                //System.out.println("respuesta de la comparacion "+compararConLista(line));
+                System.out.println("Respuesta de la comparacion "+line);
                 
                 
                 //String[] parts = line.split("=");
@@ -119,7 +119,8 @@ public class SeparadorDeListas {
                 String rightHandSide = parts[1].trim();
                 //System.out.println("Elemento izquierda "+leftHandSide+" Elemento derecha "+rightHandSide);
                 //
-                boolean assignedToTemp = leftHandSide.matches("t[0-9]+");
+                boolean assignedToTemp = leftHandSide.matches("t[0-9]+")||leftHandSide.matches("f[0-9]+");
+                boolean assignedToF = leftHandSide.matches("f[0-9]+");
                 boolean assignedToTempRight = rightHandSide.matches("t[0-9]+");
                 //System.out.println("Elemento de la derecha "+rightHandSide);
                 //System.out.println("Eelementos data "+dataLista);
@@ -219,10 +220,14 @@ public class SeparadorDeListas {
                     System.out.println("Caso especial"+"li $" + dest + ", " + value);
                     if(value.equals("true")){
                         value = "1";
+                        generatedLines.add("li $" + dest + ", " + value);
                     }else if(value.equals("false")){
                         value = "0";
+                        generatedLines.add("li $" + dest + ", " + value);
+                    }else if(assignedToF){
+                        generatedLines.add("li.s $" + dest + ", " + value);
                     }
-                    generatedLines.add("li $" + dest + ", " + value);
+                  
                 }
             }else if(line.split(" ")[0].trim().equals("goto")){
                 
