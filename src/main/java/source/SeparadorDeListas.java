@@ -440,13 +440,5 @@ public class SeparadorDeListas {
 		return 999;
 	}
 	
-	// //lee las lienas del archivo descrito en el path
-	// public static List<String> readLine() throws IOException {
-	// 	try (Stream<String> lines = Files.lines(Paths.get("/home/shiko/Descargas/3D_Code.txt"))) {
-	// 		return lines.collect(Collectors.toList());
-	// 	}
-	// }
-
-
 
 }
