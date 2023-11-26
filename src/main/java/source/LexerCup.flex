@@ -93,7 +93,7 @@ espacio=[ \t\r\n]+
 ( "%" ) {return new Symbol(sym.Modulo,  yytext());}
 
 /* Operadores logicos */
-( "&&" | "||" | "!" | "&" | "|" | "==") {return new Symbol(sym.Op_logico,  yytext());}
+( "&&" | "||" | "!" | "&" | "|") {return new Symbol(sym.Op_logico,  yytext());}
 
 /*Operadores Relacionales */
 ( ">" | "<" | "==" | "!=" | ">=" | "<=" ) {return new Symbol(sym.Op_relacional,  yytext());}
