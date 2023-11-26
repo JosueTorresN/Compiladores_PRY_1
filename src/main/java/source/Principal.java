@@ -24,14 +24,14 @@ public class Principal {
 //        String ruta = System.getProperty("user.dir") + "/src/source/Lexer.flex";
         //String rutaJFlex = "C:/Users/Usuario/Documents/NetBeansProjects/Compiladores_PRY_1/src/main/java/source/Lexer.flex";
         //String rutaCup = "C:/Users/Usuario/Documents/NetBeansProjects/Compiladores_PRY_1/src/main/java/source/Sintax.cup";
-        /*para el Sintax2*/String rutaCup = "D:\\Universidad\\compiladores\\proyecto_1.2\\Compiladores_PRY_1\\src\\main\\java\\source\\Sintax2.cup";
+        /*para el Sintax2*/String rutaCup = "C:\\Users\\Usuario\\Documents\\NetBeansProjects\\Compiladores_PRY_1\\src\\main\\java\\source\\Sintax2.cup";
         
-        String rutaLexerCup = "D:\\Universidad\\compiladores\\proyecto_1.2\\Compiladores_PRY_1\\src\\main\\java\\source\\LexerCup.flex";
+        String rutaLexerCup = "C:\\Users\\Usuario\\Documents\\NetBeansProjects\\Compiladores_PRY_1\\src\\main\\java\\source\\LexerCup.flex";
         try{
-        generarLexer(rutaLexerCup);//activador//
-        generateCup(rutaCup);//activador//
-//        ejercicioParser1("C://Users//jtn19//Downloads//pru.txt");
-//        ejercicioLexer1("C://Users//jtn19//Downloads//pru.txt");
+//        generarLexer(rutaLexerCup);//activador//
+//        generateCup(rutaCup);//activador//
+        ejercicioParser1("C:\\Users\\Usuario\\Desktop\\pru.txt");
+//        ejercicioLexer1("C:\\Users\\Usuario\\Desktop\\pru.txt");
 //generarLexer(rutaLexerCup);
         } catch (Exception ex) {
             Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
