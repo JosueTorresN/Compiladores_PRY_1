@@ -23,10 +23,23 @@ action code {:
     StringBuffer cod3D = new StringBuffer();
     StringBuffer cod3D_data = new StringBuffer();
     int currentTemp = 0;
+    int currentTemp2 = 0;
     boolean errorSemantico = false;
     int casesCurrent = 0;
     int currentParam = 0;
     ArrayList<String> tempParam;
+    boolean isReturn = false;
+    int currentTempFunc = 0;
+
+    public void verificarReturn(String tipo) {
+        String res[] = currentHash.split(":");
+        if (res[0].equals(tipo)) {
+            isReturn = true;
+        } else {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add("Error: Return no hace match con tipo de funcion  -> " + res[1] + "\n");
+        }
+    }
 
     public void verificarDatosFuncionParametros(String[] datos) {
         if (verificarParametrosCall(datos[1])) {
@@ -102,7 +115,6 @@ action code {:
     }
 
     public void verificarCreacion(String id, String tipo, String[] valor) {
-        System.out.println("VerificarCreacion id:" + id + " tipo:" + tipo + " valor:" + valor[1]);
         if (existeEnTabla(id)) {
             listaTablasSimbolos.get(currentHash).add("Error: Identificador " + id + " ya declarado\n");
             errorSemantico = true;
@@ -138,17 +150,17 @@ action code {:
 
     public void verificarIdentificadorAtrib(String id, String valor, String simb) {
         String[] resp = valor.split(":");
-        //cod3D.append(id+"="+resp[0]+"\n");
+        // cod3D.append(id+"="+resp[0]+"\n");
         String currentTemp1 = "t"+currentTemp;
         cod3D.append(currentTemp1+"="+id+"\n");
         currentTemp++;
         String currentTemp2 = "t"+currentTemp;
-        cod3D.append(currentTemp2+"="+resp[1]+"\n");
+        cod3D.append(currentTemp2+"="+resp[0]+"\n");
         currentTemp++;
         String currentTemp3 = "t"+currentTemp;
         cod3D.append(currentTemp3+"="+currentTemp1+simb+currentTemp2+"\n");
-        cod3D.append(id+"="+currentTemp3+"\n");
         currentTemp++;
+        cod3D.append(id+"="+currentTemp3+"\n");
         listaTablasSimbolos.get(currentHash).add(id + "=" + currentTemp3);
         if (buscarPorValor(id)) {
             String tipo = obtenerTipoDeTabla(id);
@@ -200,18 +212,23 @@ action code {:
         String[] resp1 = f1.split(":");
         String[] resp2 = f2.split(":");
         String res = resp1[0]+simb+resp2[0];
-        String diario = "t"+currentTemp;
+        String diario;
         listaTablasSimbolos.get(currentHash).add(res);
-        cod3D.append(diario+"="+resp1[2]+simb+resp2[2]+"\n");
-        currentTemp++;
         if ((resp1[1].equals("float") || resp1[1].equals("int")) && (resp2[1].equals("int") || resp2[1].equals("float"))) {
             if (resp1[1].equals("float") || resp2[1].equals("float")) {
+                diario = "f"+currentTemp2;
+                cod3D.append(diario+"="+resp1[2]+simb+resp2[2]+"\n");
+                currentTemp2++;
                 return res+":float:"+diario;
             } else {
+                diario = "t"+currentTemp;
+                cod3D.append(diario+"="+resp1[2]+simb+resp2[2]+"\n");
+                currentTemp++;
                 return res+":int:"+diario;
             }
         } else{
             errorSemantico = true;
+            diario = "t"+currentTemp;
             listaTablasSimbolos.get(currentHash).add("Error: Operacion solo acepta numeros en " + res + "\n");
             return res+":int:"+diario;
         }
@@ -379,7 +396,8 @@ non terminal PROGRAMA, TIPOS, EXPRESION, TERMINO, FACTOR, NUMEROS, CADENAS, SENT
     ASIGNACION, CREACION, CREACION_ASIGNACION, OPERA_RELACIONAL, OPERA_LOGICO, IF_ELSE, WHILE, FOREACH,
     GLOBALES, GLOBAL, MAIN, PARAMETROS, FUNCION, FUNCIONES, SWITCH, CASES, CASE_, RETURN, READ, WRITE, INICIO,
     FUNCION_CALL, PARAMETROS_CALL, PARAMETRO_CALL, FUNCION_CUERPO, MAIN_CUERPO, FUNCION_BODY, IF_ELSE_CUERPO,
-    WHILE_CUERPO, FOR_EACH_CUERPO, SWITCH_CUERPO, PARAMETRO, DEFAULT_, CASES_, FOR_AISGNACION, FUNCION_CALL_BODY;
+    WHILE_CUERPO, FOR_EACH_CUERPO, SWITCH_CUERPO, PARAMETRO, DEFAULT_, CASES_, FOR_AISGNACION, FUNCION_CALL_BODY,
+    WHILE_PRE, CASE_BODY;
 
 //Precedencias
 precedence left Suma, Resta;
@@ -392,6 +410,7 @@ precedence left PARAMETRO_CALL, OPERA_RELACIONAL;
 precedence left ASIGNACION, CREACION_ASIGNACION, CREACION, IF_ELSE, WHILE,
     FOREACH, SWITCH, READ, WRITE, FUNCION_CALL, RETURN;
 precedence left  If, Else;
+precedence left  GLOBAL, CREACION_ASIGNACION, CREACION;
 
 start with INICIO;
 
@@ -421,32 +440,46 @@ PROGRAMA ::=
     GLOBALES
     | MAIN
     | GLOBALES MAIN
-    | GLOBALES MAIN FUNCIONES
-    | MAIN FUNCIONES
+    | GLOBALES FUNCIONES MAIN
+    | FUNCIONES MAIN
     | FUNCIONES
     | GLOBALES FUNCIONES
 ;
 
 FUNCIONES ::=
     FUNCION
-    | FUNCION FUNCIONES
+    | FUNCIONES FUNCION 
 ;
 
 FUNCION_CUERPO ::=
     TIPOS:tVG Separador Identificador:idVG
     {:
         System.out.println("Inicio funcion");
+        isReturn = false;
         agregarTabla(idVG.toString(), tVG.toString());
+        RESULT = tVG.toString();
     :}
 ;
 
 FUNCION ::=
-    FUNCION_CUERPO FUNCION_BODY
+    FUNCION_CUERPO:e FUNCION_BODY
+    {:
+        if (!isReturn) {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add("Error: Funcion " + e.toString() + " no tiene return\n");
+        }
+    :}
 ;
 
 FUNCION_BODY ::=
     Parentesis_a Parentesis_c Llave_a SENTENCIAS Llave_c
+    {:
+        System.out.println("Fin funcion");
+    :}
     | Parentesis_a PARAMETROS Parentesis_c Llave_a SENTENCIAS Llave_c
+    {:
+        System.out.println("Fin funcion");
+    :}
     | error Llave_c
 ;
 
@@ -454,6 +487,7 @@ MAIN_CUERPO ::=
     TIPOS:tVG Separador Main:idVG
     {:
         System.out.println("Inicio main");
+        isReturn = false;
         agregarTabla(idVG.toString(), tVG.toString());
     :}
 ;
@@ -519,7 +553,7 @@ PARAMETROS ::=
 
 SENTENCIAS ::=
     SENTENCIA
-    | SENTENCIA SENTENCIAS
+    | SENTENCIAS SENTENCIA
 ;
 
 SENTENCIA ::=
@@ -576,15 +610,41 @@ WRITE ::=
         }
         listaTablasSimbolos.get(currentHash).add("read "+idVG.toString());
     :}
+    | Write Parentesis_a NUMEROS:idVG Parentesis_c P_coma
+    {:
+        String res[] = idVG.toString().split(":");
+        cod3D.append("write "+res[2]+"\n");
+    :}
 ;
 
 RETURN ::=
-    Return EXPRESION P_coma
+    Return Separador EXPRESION:e P_coma
+    {:
+        verificarReturn(e.toString().split(":")[1]);
+    :}
     | Return P_coma
-    | Return CADENAS P_coma
-    | Return OPERA_LOGICO P_coma
-    | Return NUMEROS P_coma
-    | Return Identificador P_coma
+    | Return Separador CADENAS:e P_coma
+    {:
+        verificarReturn(e.toString().split(":")[1]);
+    :}
+    | Return Separador OPERA_LOGICO:e P_coma
+    {:
+        verificarReturn(e.toString().split(":")[1]);
+    :}
+    | Return Separador NUMEROS:e P_coma
+    {:
+        verificarReturn(e.toString().split(":")[1]);
+    :}
+    | Return Separador Identificador:e P_coma
+    {:
+        if (existeEnTabla(e.toString())) {
+            String tipo = obtenerTipoDeTabla(e.toString());
+            verificarReturn(tipo);
+        } else {
+            errorSemantico = true;
+            listaTablasSimbolos.get(currentHash).add("Error: Identificador " + e.toString() + " no declarado\n");
+        }
+    :}
 ;
 
 GLOBALES ::=
@@ -609,7 +669,7 @@ SWITCH_CUERPO ::=
         String temp = "t"+currentTemp;
         String res = currentHash.split(":")[1];
         currentTemp++;
-        cod3D.append("SWITCH_"+res+":\n");
+        cod3D.append("SWITCH_"+currentTempFunc+"_"+res+":\n");
         cod3D.append(temp+idVG.toString()+":\n");
     :}
 ;
@@ -617,8 +677,9 @@ SWITCH_CUERPO ::=
 SWITCH ::=
     SWITCH_CUERPO Llave_a CASES_ Llave_c
     {:
-    String res = currentHash.split(":")[1];
-        cod3D.append("END_SWITCH_"+res+"\n");
+        String res = currentHash.split(":")[1];
+        cod3D.append("END_SWITCH_"+currentTempFunc+"_"+res+"\n");
+        currentTempFunc++;
     :}
 ;
 
@@ -627,11 +688,19 @@ CASES_ ::=
 ;
 
 CASES ::=
-    CASES CASE_
-    | CASE_
+    CASES CASE_:e
     {:
         String res = currentHash.split(":")[1];
-         cod3D.append("END_CASE_"+res+"_"+casesCurrent+":\n");
+        String[] resp = e.toString().split(":");
+        cod3D.append("END_CASE_"+resp[1]+"_"+currentTempFunc+"_"+casesCurrent+"_"+resp[0]+"\n");
+        casesCurrent++;
+    :}
+    | CASE_:e
+    {:
+        String res = currentHash.split(":")[1];
+        String[] resp = e.toString().split(":");
+        cod3D.append("END_CASE_"+resp[1]+"_"+currentTempFunc+"_"+casesCurrent+"_"+res+"\n");
+        casesCurrent++;
     :}
 ;
 
@@ -639,17 +708,26 @@ DEFAULT_ ::=
     Default P_dospuntos SENTENCIAS Break P_coma
     {:
         String res = currentHash.split(":")[1];
-        cod3D.append("Default_CASE_"+res+"_"+casesCurrent+":\n");
+        cod3D.append("Default_CASE_"+res+"_"+currentTempFunc+"_"+casesCurrent+":\n");
+    :}
+;
+
+CASE_BODY ::=
+    Case_ Separador NUMEROS:e P_dospuntos
+    {:
+        String[] resp = e.toString().split(":");
+        String res = currentHash.split(":")[1];
+        cod3D.append("jumif "+(e.toString())+"==t"+(currentTemp-1)+" goto CASE_"+resp[0]+"_"+currentTempFunc+"_"+casesCurrent+"_"+res+"\n");
+        cod3D.append("goto END_CASE_"+resp[0]+"_"+currentTempFunc+"_"+casesCurrent+"_"+res+"\n");
+        cod3D.append("CASE_"+resp[0]+"_"+currentTempFunc+"_"+casesCurrent+"_"+res+":\n");
+        RESULT = e.toString();
     :}
 ;
 
 CASE_ ::=
-    Case_ Separador NUMEROS:e P_dospuntos SENTENCIAS Break P_coma
+    CASE_BODY:e SENTENCIAS Break P_coma
     {:
-        String[] resp = e.toString().split(":");
-        cod3D.append("jumif "+(e.toString())+"==t"+(currentTemp-1)+" goto CASE_"+currentHash+"_"+casesCurrent+"\n");
-        cod3D.append("goto END_CASE_"+resp+"_"+casesCurrent+"\n");
-        cod3D.append("CASE_"+resp+"_"+casesCurrent+":\n");
+        RESULT = e.toString();
     :}
 ;
 
@@ -657,7 +735,7 @@ FOR_AISGNACION ::=
     TIPOS:tVG1 Separador Identificador:idVG1 Igual Numero:e1
     {:
         String respT = currentHash.split(":")[1];
-        cod3D.append("FOR_EACH_"+respT+":\n");
+        cod3D.append("FOR_EACH_"+currentTempFunc+"_"+respT+":\n");
         String resp = e1.toString() + ":int:t"+currentTemp;
         verificarCreacion(idVG1.toString(), tVG1.toString(), resp.split(":"));
         String res = "t"+currentTemp;
@@ -672,7 +750,7 @@ FOR_EACH_CUERPO ::=
     For Parentesis_a FOR_AISGNACION:e1 P_coma OPERA_RELACIONAL:op P_coma Identificador:idVG2 Op_incremento:e2 Parentesis_c
     {:
         String respT = currentHash.split(":")[1];
-        cod3D.append("jumif "+(e1.toString())+"==t"+(currentTemp-1)+" goto FOR_EACH_"+respT+"\n");
+        cod3D.append("jumif "+(e1.toString())+"==t"+(currentTemp-1)+" goto FOR_EACH_"+currentTempFunc+"_"+respT+"\n");
         String resp = "1:int:t"+currentTemp;
         if (e2.toString().equals("++")) {
             verificarIdentificadorAtrib(idVG2.toString(), resp, "+");
@@ -687,20 +765,28 @@ FOR_EACH_CUERPO ::=
 FOREACH ::=
     FOR_EACH_CUERPO:e Llave_a SENTENCIAS Llave_c
     {:
-        cod3D.append("goto FOR_EACH_"+currentHash.split(":")[1]+"\n");
+        cod3D.append("goto FOR_EACH_"+currentTempFunc+"_"+currentHash.split(":")[1]+"\n");
+        currentTempFunc++;
+    :}
+;
+
+WHILE_PRE ::=
+    While
+    {:
+        String res = currentHash.split(":")[1];
+        cod3D.append("PRE_WHILE_"+currentTempFunc+"_"+res+":\n");
     :}
 ;
 
 WHILE_CUERPO ::=
-    While Parentesis_a OPERA_LOGICO:e Parentesis_c
+    WHILE_PRE Parentesis_a OPERA_LOGICO:e Parentesis_c
     {:
         String[] resp = e.toString().split(":");
         String res = currentHash.split(":")[1];
         if (!errorSemantico) {
-            cod3D.append("PRE_WHILE_"+res+":\n");
-            cod3D.append("jumif "+(resp[2])+" goto WHILE_"+res+"\n");
-            cod3D.append("goto WHILE_ELSE_"+res+"\n");
-            cod3D.append("WHILE_"+res+":\n");
+            cod3D.append("jumif "+(resp[2])+" goto WHILE_"+currentTempFunc+"_"+res+"\n");
+            cod3D.append("goto WHILE_ELSE_"+currentTempFunc+"_"+res+"\n");
+            cod3D.append("WHILE_"+currentTempFunc+"_"+res+":\n");
         }
     :}
 ;
@@ -708,10 +794,10 @@ WHILE_CUERPO ::=
 WHILE ::=
     WHILE_CUERPO Llave_a SENTENCIAS Llave_c Else Llave_a SENTENCIAS Llave_c
     {:
-            String res = currentHash.split(":")[1];
-            cod3D.append("goto PRE_WHILE_"+res+"\n");
-            cod3D.append("WHILE_ELSE_"+res+":\n");
-        
+        String res = currentHash.split(":")[1];
+        cod3D.append("goto PRE_WHILE_"+currentTempFunc+"_"+res+"\n");
+        cod3D.append("WHILE_ELSE_"+currentTempFunc+"_"+res+":\n");
+        currentTempFunc++;
     :}
 ;
 
@@ -720,16 +806,16 @@ IF_ELSE_CUERPO ::=
     {:
         String[] resp = e.toString().split(":");
         String res = currentHash.split(":")[1];
-            cod3D.append("jumif "+(resp[2])+" goto IF_"+res+"\n");
-            cod3D.append("goto ELSE_"+res+"\n");
-            cod3D.append("IF_"+res+":\n");
-        
+        cod3D.append("jumif "+(resp[2])+" goto IF_"+currentTempFunc+"_"+res+"\n");
+        cod3D.append("goto ELSE_"+currentTempFunc+"_"+res+"\n");
+        cod3D.append("IF_"+currentTempFunc+"_"+res+":\n");
+        currentTempFunc++;
     :}
     | Else
     {:
         String res = currentHash.split(":")[1];
-        cod3D.append("ELSE_"+res+":\n");
-        
+        cod3D.append("ELSE_"+currentTempFunc+"_"+res+":\n");
+        currentTempFunc++;
     :}
 ;
 
@@ -875,15 +961,26 @@ FACTOR ::=
     | Identificador:e
     {:
         listaTablasSimbolos.get(currentHash).add(e.toString());
-        String res = "t"+currentTemp;
-        cod3D.append(res+"="+e.toString()+"\n");
-        currentTemp++;
+        String res;
         if (!existeEnTabla(e.toString())) {
             errorSemantico = true;
+            res = "t"+currentTemp;
+            currentTemp++;
             listaTablasSimbolos.get(currentHash).add("Error: Identificador " + e.toString() + " ya declarado\n");
             RESULT = e.toString()+":NULL:"+res;
         } else {
             String tipo = obtenerTipoDeTabla(e.toString());
+            if (tipo.equals("float")) {
+                res = "f"+currentTemp2;
+                cod3D.append(res+"="+e.toString()+"\n");
+                currentTemp2++;
+                RESULT = e.toString()+":float:"+res;
+            } else {
+                res = "t"+currentTemp;
+                cod3D.append(res+"="+e.toString()+"\n");
+                currentTemp++;
+                RESULT = e.toString()+":int:"+res;
+            }
             RESULT = e.toString()+":"+tipo+":"+res;
         }
     :}
@@ -901,9 +998,9 @@ TIPOS ::=
 NUMEROS ::=
     Float:e 
     {:
-        String res = "f"+currentTemp;
+        String res = "f"+currentTemp2;
         cod3D.append(res+"="+e.toString()+"\n");
-        currentTemp++;
+        currentTemp2++;
         RESULT = e+":float:"+res;
     :}
     | Numero:e
