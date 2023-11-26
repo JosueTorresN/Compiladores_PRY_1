@@ -16,6 +16,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SeparadorDeListas {
     private static boolean[] registrosT = new  boolean[10];
@@ -35,6 +46,9 @@ public class SeparadorDeListas {
 
             // Imprimir cada elemento de cada lista
             for (List<String> list : listOfLists) {
+                //List<String> list;
+		
+		list=changeTs(list);
                 convertToAssembler(list);//LLamada a la funcion que escribe el asm
                 printList(list);
             }
@@ -102,7 +116,7 @@ public class SeparadorDeListas {
 
     public static void convertToAssembler(List<String> inputLines) {
         //generatedLines.clear();
-
+        
         //generatedLines.add(inputLines.get(0));
         generatedLines.add(".data");
         for (int i = 1; i < inputLines.size(); i++) {
@@ -208,7 +222,24 @@ public class SeparadorDeListas {
                             generatedLines.add(operator + " $" + src1 + ", $" + src2 + ", " + nRightHandSide );
                         }
                     }else if (!operator.equals("pot")){
-                        generatedLines.add(operator + " $" + dest + ", $" + src1 + ", $" + src2);
+                        if(operator.equals("addi")){
+                            String nOldLinea = generatedLines.get(generatedLines.size()-1);
+                            generatedLines.remove(generatedLines.size()-1);
+                            String[] oldSplit = nOldLinea.split(",");
+                            String oldSplitLeft = oldSplit[0].trim();
+                            String oldSplitRight = oldSplit[1].trim();                  
+                            //String[] oldSplit2 = null;
+                            
+                            
+                            oldSplit = nOldLinea.split(" ");
+                            String oldSplitRight2 = oldSplit[1].trim();
+                            oldSplitRight2 = oldSplitRight2.replace("$", "");
+                            oldSplitRight2 = oldSplitRight2.replace(",", "");
+                            generatedLines.add("li $" + oldSplitRight2 + ", -" + oldSplitRight);
+                            generatedLines.add(operator + " $" + dest + ", $" + src1 + ", $" + oldSplitRight2);
+                        }else{
+                            generatedLines.add(operator + " $" + dest + ", $" + src1 + ", $" + src2);
+                        }
                     }else{
                         creadorPotencias(src1,src2);
                        
@@ -356,94 +387,66 @@ public class SeparadorDeListas {
     
     
     
-    
-    
-    
-    //Funcion encargada del control de la reasignacion de registros 
-    public static void procesarCodigoMIPS(List<String> codigoMIPS) {        
-        for (String instruccion : codigoMIPS) {
-            if (instruccion.startsWith("li")) {
-                procesarInstruccionLI(instruccion);
-            } else if (instruccion.startsWith("add") || instruccion.startsWith("div") || instruccion.startsWith("addi")) {
-                procesarInstruccionAritmetica(instruccion);
-            } else if (instruccion.startsWith("sw")) {
-                procesarInstruccionSW(instruccion);
-            }else{
-                generatedLines2.add(instruccion);
-                //System.out.println("instrucciones =>"+instruccion);
-            }
-        }
-    }
-    //Funcion encargada de procesar las etiquetas y reasignar registros
-    private static void procesarInstruccionLI(String instruccion) {
-        // Obtener el registro temporal
-        String registro = instruccion.split(",")[0].split("\\s+")[1];
-        System.out.println("registro "+registro);
-        
-        String temVarReg = registro.replace("$t", "");
-        int tempVarInt = Integer.valueOf(temVarReg);
-        //System.out.println("registro tem "+temVarReg);
-        // Verificar si el registro está en uso
-        //if (registrosT[obtenerIndiceRegistro(registro)]) {
-        if (registrosT[obtenerIndiceRegistro(registro)]) {
-            // Cambiar el registro a uno disponible
-            String nuevoRegistro = obtenerRegistroDisponible();
-            instruccion = instruccion.replace(registro, nuevoRegistro);
-        }
+	//Fucnion principal que cambia los Ts
+	public static List<String> changeTs(List<String> list){
+		Pattern pattern = Pattern.compile("t[0-9]+");
+		char control=(char)157;
+		
+		boolean [] recordAvaible= new boolean[10];
+		Map<String, String> temps=new HashMap<>();		 
+		List<String> convertido=new ArrayList<String>();
+		
+		for (String string : list) {
+			Matcher matcher = pattern.matcher(string);
+			String [] asignacion=string.split("=");		
+			String newString=string;
 
-        // Marcar el registro como en uso
-        registrosT[obtenerIndiceRegistro(instruccion.split(",")[0].split("\\s+")[1])] = true;
+			while (matcher.find()) {
+				String t=matcher.toMatchResult().group();
+				String newt=null;
+				
+				if(asignacion.length>1 && asignacion[0].contains(t)) {
+					newt=control+""+findAvaible(recordAvaible);
+					temps.put(t,newt);
+				}else {
+					newt=temps.get(t);
+					freeIndex(recordAvaible, newt);
+				}
+				
+				newString=newString.replace(t, newt);
+			}
+			newString=newString.replace(control, 't');
+			convertido.add(newString);
+		}
+		
+		return convertido;		
+	}
+	
+	//Libera el indice del t
+	public static void freeIndex(boolean [] recordAvaible,String newt) {
+		newt=newt.substring(1);
+		int index=Integer.parseInt(newt);
+		recordAvaible[index]=false;
+	}
+	
+	//Reserva el indice del t
+	public static int findAvaible(boolean [] recordAvaible) {
+		for (int i = 0; i < recordAvaible.length; i++) {
+			if(!recordAvaible[i]){
+				recordAvaible[i]=true;
+				return i;
+			}
+		}
+		return 999;
+	}
+	
+	// //lee las lienas del archivo descrito en el path
+	// public static List<String> readLine() throws IOException {
+	// 	try (Stream<String> lines = Files.lines(Paths.get("/home/shiko/Descargas/3D_Code.txt"))) {
+	// 		return lines.collect(Collectors.toList());
+	// 	}
+	// }
 
-        // Procesar la instrucción y almacenar el resultado
-        generatedLines2.add(instruccion);
-    }
-    private static void procesarInstruccionAritmetica(String instruccion) {
-        // Obtener los registros temporales
-        String[] registros = instruccion.split(",");
-        String registroDestino = registros[0].split("\\s+")[1];
-        String registroFuente1 = registros[1].trim();
-        String registroFuente2 = registros[2].trim();
 
-        // Liberar el registro usado por la derecha
-        registrosT[obtenerIndiceRegistro(registroFuente1)] = false;
-        registrosT[obtenerIndiceRegistro(registroFuente2)] = false;
-
-        // Marcar el registro destino como en uso
-        registrosT[obtenerIndiceRegistro(registroDestino)] = true;
-
-        // Procesar la instrucción y almacenar el resultado
-        generatedLines2.add(instruccion);
-    }
-
-    private static void procesarInstruccionSW(String instruccion) {
-        // Obtener los registros y el destino de sw
-        String[] partes = instruccion.split(",");
-        String registroFuente = partes[0].split("\\s+")[1].trim();
-        String destino = partes[1].trim();
-
-        // Liberar el registro usado por la derecha
-        registrosT[obtenerIndiceRegistro(registroFuente)] = false;
-
-        // Procesar la instrucción y almacenar el resultado
-        generatedLines2.add(instruccion);
-    }
-    //Funcion encargada de obtener el indice
-    private static int obtenerIndiceRegistro(String registro) {
-        System.out.println("registro optenido "+registro.substring(1));
-        String temVarReg = registro.replace("$t", "");
-        int tempVarInt = Integer.valueOf(temVarReg);
-        return tempVarInt;
-    }
-    //Funcion encargada de saber si un registro se encuentra en disposicion de uso 
-    private static String obtenerRegistroDisponible() {
-        for (int i = 0; i < registrosT.length; i++) {
-            if (!registrosT[i]) {
-                registrosT[i] = true;
-                return "t" + i;
-            }
-        }
-        // Aquí podrías manejar el caso en el que no hay registros disponibles
-        throw new IllegalStateException("No hay registros temporales disponibles.");
-    }
 
 }
